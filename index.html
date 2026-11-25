@@ -125,9 +125,10 @@ footer .logo{color:var(--bg)}
 footer .lg{color:var(--bg);height:60px;width:200px}
 .quote{font-size:clamp(40px,5.6vw,68px);max-width:16ch;margin-bottom:16px}
 .qsub{font-size:18px;margin-bottom:32px}
-.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
-.tc{border:2px solid var(--ink);border-radius:22px;padding:20px 22px 22px;box-shadow:5px 5px 0 var(--ink)}
-.tc svg{display:block;width:100%;height:auto;max-height:170px;margin-bottom:10px}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,1.6vw,26px);margin:8px calc(-1*max(5vw,16px)) 0;padding:0 max(2vw,16px)}
+.tc{border:2px solid var(--ink);border-radius:22px;padding:0 0 22px;box-shadow:5px 5px 0 var(--ink);overflow:hidden;display:flex;flex-direction:column}
+.tc img{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;border-bottom:2px solid var(--ink);margin-bottom:16px}
+.tc h3,.tc p{padding:0 22px}
 .tc p{margin:0}
 .t1{background:var(--sun2)}.t2{background:var(--tint)}.t3{background:light-dark(#ffe3e1,#2e1e22)}
 .t1{transform:rotate(-1deg)}.t3{transform:rotate(1deg)}
@@ -202,34 +203,24 @@ footer .lg{color:var(--bg);height:60px;width:200px}
   <div class="wrap">
     <p class="big quote">Ми не лікуємо сум. Ми <em>трошки сміємося разом</em> з ним.</p>
     <p class="qsub">Коли близькій людині погано, порада «не сумуй» не працює. А картина, де її сум став героєм, працює: людина бачить себе збоку, з любов'ю, і вперше за довгий час усміхається. І ця картина лишається поруч.</p>
-    <div class="trio">
+  </div>
+  <div class="trio">
       <article class="tc t1">
-        <svg viewBox="0 0 220 140" aria-hidden="true"><g stroke="var(--ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="70" cy="80" r="40" fill="#ffd23f"/><path d="M50 70q6-6 12 0M78 70q6-6 12 0" fill="none"/><path d="M52 90q18 20 36 0z" fill="#ff5a5f"/>
-          <circle cx="150" cy="80" r="40" fill="#c9d4f2"/><path d="M130 72q6-6 12 0M158 72q6-6 12 0" fill="none"/><path d="M134 90q16 18 32 0z" fill="#ff5a5f"/>
-          <path d="M110 30c-8-14 0-22 8-18 8-4 16 4 8 18l-8 8z" fill="#ff5a5f"/></g>
-          <text x="22" y="30" font-family="Caveat,cursive" font-size="28" fill="var(--ink)">ха</text><text x="176" y="30" font-family="Caveat,cursive" font-size="28" fill="var(--ink)">ха</text></svg>
+        <img src="smile.jpg" alt="Усмішка крупним планом: борода і зуби" width="900" height="1200" loading="lazy">
         <h3>Сміємося разом, а не з людини</h3>
         <p>Перебільшуємо окуляри, хмаринки й надуті губи, але ніколи не саму людину. Тільки тепло.</p>
       </article>
       <article class="tc t2">
-        <svg viewBox="0 0 220 140" aria-hidden="true"><path d="M20 112c40-20 90-6 130-26 20-10 40-8 54-2" fill="none" stroke="#ffd23f" stroke-width="16" stroke-linecap="round"/><path d="M24 118c30-10 60-6 90-12" fill="none" stroke="#ff5a5f" stroke-width="7" stroke-linecap="round"/>
-          <g stroke="var(--ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M118 60l52-44 10 10-46 50z" fill="#c98b4d"/><path d="M134 76l-16-16-10 8 18 18z" fill="#bfc6d4"/><path d="M108 68c-10 4-16 14-14 24 10 2 20-4 24-14z" fill="#5b7bd5"/>
-          <path d="M150 52c14 2 26 12 28 26 2 14-8 24-22 24h-20c-8 0-12-8-6-12l10-6-14-2c-8-2-6-12 2-12l18 0z" fill="#f2d9c4"/></g></svg>
+        <img src="hands.jpg" alt="Рука художника на тлі готової картини" width="900" height="1200" loading="lazy">
         <h3>Тільки живі руки</h3>
         <p>Кожну картину художник пише на полотні олією, акрилом чи пастеллю. Без генераторів, без планшетів, без шаблонів.</p>
       </article>
       <article class="tc t3">
-        <svg viewBox="0 0 220 140" aria-hidden="true"><g stroke="var(--ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="110" cy="14" r="4" fill="var(--ink)"/><path d="M110 14L70 40M110 14l40 26" fill="none" stroke-width="2"/>
-          <rect x="62" y="38" width="96" height="94" rx="3" fill="#c98b4d"/><rect x="72" y="48" width="76" height="74" fill="#fff"/>
-          <path d="M84 72q0-20 26-20t26 20q0 22-26 24-26-2-26-24z" fill="#f2d9c4" stroke-width="2.4"/><path d="M84 68q2-18 26-18 24 0 26 18-10-8-26-8t-26 8z" fill="#7d5ba6" stroke-width="2.4"/>
-          <path d="M92 70h12M116 70h12" stroke="#ffd23f" stroke-width="4"/><path d="M104 84q6 3 12 0" stroke="#ff5a5f" stroke-width="3" fill="none"/><path d="M78 122q32-22 64 0z" fill="#7fb59a" stroke-width="2.4"/></g></svg>
+        <img src="gift.jpg" alt="Готовий портрет пастеллю на полотні" width="900" height="1200" loading="lazy">
         <h3>Подарунок, що лишається</h3>
         <p>Не мем на хвилину, а справжня картина, яку вішають на стіну й показують гостям.</p>
       </article>
     </div>
-  </div>
 </section>
 
 <section class="band paint">
