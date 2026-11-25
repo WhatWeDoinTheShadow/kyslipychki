@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Кислі пички</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<script src="config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
@@ -500,7 +501,10 @@ $('styles').innerHTML=S.map((s,i)=>`<label class="opt"><input type="radio" name=
 $('tech').innerHTML=T.map((t,i)=>`<label class="opt"><input type="radio" name="tech" value="${t}" ${i==3?'checked':''}><b>${t}</b></label>`).join('');
 $('priceCards').innerHTML=S.map(s=>`<div class="card"><h3>${s.n}, ${s.sz}</h3><div class="tag">${fmt(s.p)}</div><ul>${s.f.map(x=>`<li>${x}</li>`).join('')}</ul><a class="btn ghost" href="#order" data-s="${s.id}">Обрати</a></div>`).join('');
 
-let photoName='';
+let photoName='',photoFile=null;
+// звідки прийшла людина: перший візит за сесію
+let src={};try{src=JSON.parse(sessionStorage.getItem('kp_src')||'null')}catch(e){}
+if(!src){const q=new URLSearchParams(location.search);src={utm_source:q.get('utm_source')||'',utm_medium:q.get('utm_medium')||'',utm_campaign:q.get('utm_campaign')||'',referrer:document.referrer||'',landing:location.pathname+location.search};try{sessionStorage.setItem('kp_src',JSON.stringify(src))}catch(e){}}
 const f=$('f');
 const val=n=>(f.querySelector(`input[name=${n}]:checked`)||{}).value;
 function render(){
@@ -522,7 +526,7 @@ f.addEventListener('change',render);
 
 function setFile(file){
   if(!file||!file.type.startsWith('image/'))return;
-  photoName=file.name;
+  photoName=file.name;photoFile=file;
   $('fname').textContent=file.name;
   const r=new FileReader();
   r.onload=()=>{const t=$('thumb');t.style.backgroundImage=`url("${r.result}")`;t.textContent='';};
@@ -537,23 +541,50 @@ d.addEventListener('drop',e=>setFile(e.dataTransfer.files[0]));
 
 document.querySelectorAll('[data-s]').forEach(a=>a.addEventListener('click',()=>{const i=f.querySelector(`input[name=style][value=${a.dataset.s}]`);if(i){i.checked=true;render();}}));
 
-f.addEventListener('submit',e=>{
+function toB64(blob){return new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=no;r.readAsDataURL(blob);});}
+async function packPhoto(file){
+  // зменшуємо до 1600 px, щоб фото швидко долетіло; якщо браузер не вміє (HEIC), шлемо як є
+  try{
+    const img=await new Promise((ok,no)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>ok(im);im.onerror=no;im.src=u;});
+    const k=Math.min(1,1600/Math.max(img.naturalWidth,img.naturalHeight));
+    const c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    const blob=await new Promise(ok=>c.toBlob(ok,'image/jpeg',.86));
+    if(blob)return{name:file.name.replace(/\.[^.]+$/,'')+'.jpg',type:'image/jpeg',data:await toB64(blob)};
+  }catch(e){}
+  if(file.size>8e6)throw new Error('photo_too_big');
+  return{name:file.name,type:file.type||'image/jpeg',data:await toB64(file)};
+}
+const ERR={missing_fields:'Перевір ім\'я, email, телефон і відділення.',missing_photo:'Додай фото.',photo_too_big:'Фото завелике, спробуй інше або зроби скриншот.',too_fast:'Замовлення вже надіслано, зачекай пів хвилини.'};
+f.addEventListener('submit',async e=>{
   e.preventDefault();
   const miss=[];
-  if(!photoName)miss.push('фото');
+  if(!photoFile)miss.push('фото');
   if(!$('name').value.trim())miss.push("ім'я");
   if(!/^\S+@\S+\.\S+$/.test($('contact').value.trim()))miss.push('email');
   if(!$('city').value.trim())miss.push('відділення НП');
   if($('phone').value.replace(/\D/g,'').length<10)miss.push('телефон');
   if(!$('ok').checked)miss.push('згоду внизу');
   if(miss.length){$('err').textContent='Додай, будь ласка: '+miss.join(', ')+'.';return;}
+  const api=window.KP_API;
+  if(!api){$('err').textContent='Прийом замовлень ще налаштовується. Спробуй трохи пізніше.';return;}
   $('err').textContent='';
-  const tot=render(),no='KP-'+String(Date.now()).slice(-5);
-  $('doneText').textContent=`Замовлення ${no} на ${fmt(tot)}. Портрет для: ${$('name').value.trim()}. Відповідь прийде на ${$('contact').value.trim()}.`;
-  f.hidden=true;$('done').hidden=false;
-  $('done').scrollIntoView({behavior:'smooth',block:'start'});
+  const btn=f.querySelector('button[type=submit]');btn.disabled=true;btn.textContent='Надсилаємо…';
+  try{
+    const payload={action:'order',who:val('who'),size:val('style'),tech:val('tech'),rush:$('rush').checked,
+      name:$('name').value.trim(),email:$('contact').value.trim(),phone:$('phone').value.trim(),city:$('city').value.trim(),
+      about:$('about').value.trim(),photo:await packPhoto(photoFile),device:navigator.userAgent.slice(0,200),...src};
+    const res=await fetch(api,{method:'POST',body:JSON.stringify(payload)});
+    const out=await res.json();
+    if(!out.ok)throw new Error(out.error||'fail');
+    $('doneText').textContent=`Замовлення ${out.id} на ${fmt(out.total)}. Портрет для: ${payload.name}. Ми напишемо на ${payload.email}, щоб узгодити оплату.`;
+    f.hidden=true;$('done').hidden=false;
+    $('done').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(err){
+    $('err').textContent=ERR[err.message]||'Не вдалося надіслати. Перевір інтернет і спробуй ще раз.';
+  }finally{btn.disabled=false;btn.textContent='Замовити портрет';}
 });
-$('again').addEventListener('click',()=>{f.reset();photoName='';$('thumb').style.backgroundImage='';$('thumb').textContent='фото';$('fname').textContent='Натисни або перетягни фото сюди';f.hidden=false;$('done').hidden=true;render();});
+$('again').addEventListener('click',()=>{f.reset();photoName='';photoFile=null;$('thumb').style.backgroundImage='';$('thumb').textContent='фото';$('fname').textContent='Натисни або перетягни фото сюди';f.hidden=false;$('done').hidden=true;render();});
 render();
 const pp=$('pp');
 function route(){const on=location.hash==='#privacy';pp.classList.toggle('on',on);document.body.style.overflow=on?'hidden':'';if(on)pp.scrollTop=0;}

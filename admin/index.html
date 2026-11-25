@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#ffd23f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Пички">
+<title>Пички · адмінка</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="../config.js"></script>
+<style>
+/* VOICE work tool, warm brand: a painter's order board on a phone
+   IDEA the studio's order clipboard: cards pinned in a column, status as coloured tape
+   PICTURE the live list of orders with the photo of each sad face
+   COLOUR yellow header band, white cards, ink text, coral for new, blue for in progress
+   TYPE Caveat for headings and figures + Nunito
+   LAYOUT phone: header, stats strip, chips, cards; desktop: list left, detail right */
+:root{color-scheme:light dark;--bg:light-dark(#f6f4ee,#121318);--card:light-dark(#fff,#1c1e26);--ink:light-dark(#1b1d2a,#f3f0e9);--soft:light-dark(#6a6c7c,#a9a8b6);--line:light-dark(#e6e2d6,#2d303c);--sun:light-dark(#ffd23f,#3a3216);--pop:#ff5a5f;--rain:light-dark(#5b7bd5,#8aa3ee)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Nunito,system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+button,input,textarea{font:inherit;color:inherit}
+h1,h2,.fig{font-family:Caveat,cursive;font-weight:700;line-height:1.05;margin:0}
+header{position:sticky;top:0;z-index:5;background:var(--sun);border-bottom:2px solid var(--ink);padding:calc(10px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 10px max(16px,env(safe-area-inset-left));display:flex;align-items:center;gap:10px}
+header h1{font-size:30px;margin-right:auto}
+.ib{min-width:44px;height:44px;border-radius:12px;border:2px solid var(--ink);background:var(--card);display:grid;place-items:center;cursor:pointer;font-weight:800;padding:0 10px}
+.ib:active{transform:translateY(1px)}
+.ib svg{width:20px;height:20px}
+.spin svg{animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+main{padding:14px max(16px,env(safe-area-inset-left)) calc(24px + env(safe-area-inset-bottom));max-width:1240px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.st{background:var(--card);border:2px solid var(--ink);border-radius:14px;padding:10px 12px}
+.st .fig{font-size:clamp(28px,6vw,40px);white-space:nowrap}
+.st small{color:var(--soft);font-size:13px}
+.st.new .fig{color:var(--pop)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;scrollbar-width:none}
+.chip{flex:none;height:40px;padding:0 14px;border-radius:999px;border:2px solid var(--line);background:var(--card);cursor:pointer;font-weight:700;font-size:14px;white-space:nowrap}
+.chip[aria-pressed=true]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.chip b{opacity:.6;margin-left:4px}
+.search{width:100%;height:46px;border-radius:12px;border:2px solid var(--line);background:var(--card);padding:0 14px;font-size:16px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media(min-width:900px){.grid{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);align-items:start}.detail{position:sticky;top:84px;max-height:calc(100vh - 100px);overflow:auto}}
+.list{display:grid;gap:10px}
+.o{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;text-align:left;width:100%;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:12px 14px;cursor:pointer}
+.o[aria-current=true]{border-color:var(--ink);box-shadow:3px 3px 0 var(--ink)}
+.dot{width:12px;height:12px;border-radius:50%;grid-row:span 2}
+.o .nm{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.o .sum{font-family:Caveat,cursive;font-size:26px;font-weight:700;white-space:nowrap}
+.o .meta{grid-column:2/4;color:var(--soft);font-size:14px;display:flex;flex-wrap:wrap;gap:2px 10px}
+.tag{display:inline-block;font-size:12px;font-weight:800;padding:2px 8px;border-radius:6px;white-space:nowrap}
+.s-new{--c:#ff5a5f}.s-paid{--c:#e5a800}.s-painting{--c:#5b7bd5}.s-shipped{--c:#8a5cc7}.s-done{--c:#2e9e62}.s-cancelled{--c:#9a9aa6}
+.dot{background:var(--c)}.tag{background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--c)}
+.empty{background:var(--card);border:2px dashed var(--line);border-radius:16px;padding:28px;text-align:center;color:var(--soft)}
+.detail{background:var(--card);border:2px solid var(--ink);border-radius:18px;padding:16px}
+.detail[hidden]{display:none}
+.dh{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+.dh h2{font-size:34px;margin-right:auto}
+.ph{width:100%;aspect-ratio:4/5;max-height:420px;border-radius:12px;background:var(--line) center/contain no-repeat;display:grid;place-items:center;color:var(--soft);margin-bottom:14px}
+dl{display:grid;grid-template-columns:minmax(90px,auto) minmax(0,1fr);gap:8px 14px;margin:0 0 14px}
+dt{color:var(--soft);font-size:14px}dd{margin:0;overflow-wrap:anywhere}
+dd a{color:var(--rain);font-weight:700}
+.about{background:var(--bg);border-radius:12px;padding:12px;margin-bottom:14px;white-space:pre-wrap}
+.sts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.sb{height:44px;border-radius:12px;border:2px solid var(--line);background:var(--bg);cursor:pointer;font-weight:700;font-size:14px}
+.sb[aria-pressed=true]{border-color:var(--c);background:var(--c);color:#fff}
+textarea{width:100%;min-height:80px;border-radius:12px;border:2px solid var(--line);background:var(--bg);padding:10px;font-size:16px;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btn{height:46px;padding:0 18px;border-radius:999px;border:2px solid var(--ink);background:var(--pop);color:#fff;font-weight:800;cursor:pointer}
+.btn.g{background:var(--card);color:var(--ink)}
+.srcs{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:14px}
+.srcs h3{margin:0 0 8px;font-size:15px}
+.sr{display:grid;grid-template-columns:minmax(0,9em) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:14px;margin:6px 0}
+.bar{height:10px;border-radius:6px;background:var(--sun);border:1px solid var(--ink)}
+.login{min-height:100%;display:grid;place-items:center;padding:24px;background:var(--sun)}
+.login form{width:min(380px,100%);background:var(--card);border:2px solid var(--ink);border-radius:20px;padding:24px;box-shadow:5px 5px 0 var(--ink);display:grid;gap:12px}
+.login h1{font-size:44px}
+.login input{height:50px;border-radius:12px;border:2px solid var(--line);background:var(--bg);padding:0 14px;font-size:16px}
+.err{color:var(--pop);font-weight:800;min-height:1.2em;margin:0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.on{opacity:1}
+:focus-visible{outline:3px solid var(--rain);outline-offset:2px}
+@media(max-width:899px){.detail{position:fixed;inset:0;z-index:10;border-radius:0;border:0;overflow:auto;padding:calc(14px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))}}
+@media(max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.sts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+{
+const API=window.KP_API||'';
+const ST=[['new','Нове'],['paid','Оплачено'],['painting','Малюємо'],['shipped','Відправлено'],['done','Вручено'],['cancelled','Скасовано']];
+const SL=Object.fromEntries(ST);
+const $=s=>document.querySelector(s);
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>(+n||0).toLocaleString('uk-UA')+' ₴';
+const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
+let token=ls.get('kp_token'),orders=[],filter='all',q='',sel=null,photos={},busy=false;
+
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2200);}
+async function call(body){
+  if(!API)throw new Error('no_api');
+  const r=await fetch(API,{method:'POST',body:JSON.stringify({...body,token})});
+  const o=await r.json();if(!o.ok)throw new Error(o.error||'fail');return o;
+}
+function ago(iso){
+  const d=new Date(iso),m=Math.round((Date.now()-d)/6e4);
+  if(m<1)return'щойно';if(m<60)return m+' хв тому';const h=Math.round(m/60);if(h<24)return h+' год тому';
+  return d.toLocaleDateString('uk-UA',{day:'numeric',month:'short'})+', '+d.toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});
+}
+function source(o){
+  if(o.utm_source)return o.utm_source+(o.utm_medium?' / '+o.utm_medium:'');
+  if(o.referrer){try{return new URL(o.referrer).hostname.replace(/^www\./,'')}catch(e){}}
+  return 'Прямий захід';
+}
+
+function login(msg=''){
+  $('#app').innerHTML=`<div class="login"><form id="lf"><h1>Кислі пички</h1><p style="margin:0">Адмінка замовлень. Введи пароль, який видав бекенд.</p>
+  <input id="pw" type="password" autocomplete="current-password" placeholder="Пароль" aria-label="Пароль">
+  <p class="err" id="le">${esc(msg)}</p><button class="btn" type="submit">Увійти</button></form></div>`;
+  $('#lf').addEventListener('submit',async e=>{
+    e.preventDefault();token=$('#pw').value.trim();if(!token)return;
+    $('#le').textContent='Перевіряю…';
+    try{const o=await call({action:'list'});orders=o.orders;ls.set('kp_token',token);shell();}
+    catch(err){token=null;$('#le').textContent=err.message==='unauthorized'?'Неправильний пароль.':err.message==='no_api'?'Бекенд ще не підключено (config.js).':'Немає зв\'язку з бекендом.';}
+  });
+}
+
+function shell(){
+  $('#app').innerHTML=`<header><h1>Замовлення</h1>
+  <button class="ib" id="rf" aria-label="Оновити"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg></button>
+  <button class="ib" id="lo" aria-label="Вийти">Вийти</button></header>
+  <main><div class="stats" id="stats"></div><div class="srcs" id="srcs"></div>
+  <div class="chips" id="chips" role="toolbar" aria-label="Фільтр за статусом"></div>
+  <input class="search" id="q" type="search" placeholder="Пошук: ім'я, телефон, email, номер" aria-label="Пошук">
+  <div class="grid"><div class="list" id="list"></div><section class="detail" id="detail" hidden></section></div></main>`;
+  $('#rf').onclick=()=>load(true);
+  $('#lo').onclick=()=>{ls.set('kp_token',null);token=null;login();};
+  $('#q').oninput=e=>{q=e.target.value.toLowerCase();renderList();};
+  renderAll();
+}
+
+function renderAll(){renderStats();renderList();if(sel)renderDetail();}
+function renderStats(){
+  const now=new Date(),mo=orders.filter(o=>{const d=new Date(o.created);return d.getMonth()==now.getMonth()&&d.getFullYear()==now.getFullYear()&&o.status!=='cancelled';});
+  const c=s=>orders.filter(o=>o.status===s).length;
+  $('#stats').innerHTML=[['new',c('new'),'нових'],['',c('paid')+c('painting'),'в роботі'],['',c('shipped'),'в дорозі'],['',money(mo.reduce((a,o)=>a+(+o.total||0),0)),'за цей місяць']]
+    .map(([k,v,l])=>`<div class="st ${k}"><div class="fig">${esc(v)}</div><small>${l}</small></div>`).join('');
+  const by={};mo.forEach(o=>{const s=source(o);by[s]=(by[s]||0)+1;});
+  const top=Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,5),mx=top[0]?.[1]||1;
+  $('#srcs').innerHTML=`<h3>Звідки прийшли цього місяця</h3>`+(top.length?top.map(([s,n])=>`<div class="sr"><span>${esc(s)}</span><div class="bar" style="width:${Math.max(6,n/mx*100)}%"></div><b>${n}</b></div>`).join(''):'<div style="color:var(--soft);font-size:14px">Ще немає замовлень цього місяця.</div>');
+  const cnt=k=>k==='all'?orders.length:orders.filter(o=>o.status===k).length;
+  $('#chips').innerHTML=[['all','Усі'],...ST].map(([k,l])=>`<button class="chip" data-f="${k}" aria-pressed="${filter===k}">${l}<b>${cnt(k)}</b></button>`).join('');
+  $('#chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{filter=b.dataset.f;renderStats();renderList();});
+}
+function renderList(){
+  const L=orders.filter(o=>(filter==='all'||o.status===filter)&&(!q||[o.id,o.name,o.email,o.phone,o.city].join(' ').toLowerCase().includes(q)));
+  $('#list').innerHTML=L.length?L.map(o=>`<button class="o s-${esc(o.status)}" data-id="${esc(o.id)}" aria-current="${sel===o.id}">
+    <span class="dot"></span><span class="nm">${esc(o.name)}${o.who==='friend'?' · подарунок':''}</span><span class="sum">${money(o.total)}</span>
+    <span class="meta"><span class="tag">${esc(SL[o.status]||o.status)}</span><span>${esc(o.sizeLabel)}</span>${o.rush?'<span>терміново</span>':''}<span>${ago(o.created)}</span><span>${esc(source(o))}</span></span></button>`).join('')
+    :`<div class="empty">${orders.length?'Нічого не знайдено за цим фільтром.':'Замовлень поки немає. Щойно хтось замовить портрет, він з\'явиться тут.'}</div>`;
+  $('#list').querySelectorAll('.o').forEach(b=>b.onclick=()=>{sel=b.dataset.id;renderList();renderDetail();});
+}
+async function renderDetail(){
+  const o=orders.find(x=>x.id===sel),D=$('#detail');
+  if(!o){D.hidden=true;return;}
+  D.hidden=false;
+  D.innerHTML=`<div class="dh"><h2>${esc(o.id)}</h2><button class="ib" id="cl" aria-label="Закрити">✕</button></div>
+  <div class="ph" id="ph">Завантажую фото…</div>
+  <dl>
+   <dt>Для кого</dt><dd>${esc(o.name)} · ${o.who==='friend'?'подарунок другу':'для себе'}</dd>
+   <dt>Полотно</dt><dd>${esc(o.sizeLabel)} · ${esc(o.tech||'—')}${o.rush?' · <b>терміново 48 год + стікер</b>':''}</dd>
+   <dt>Сума</dt><dd><b>${money(o.total)}</b></dd>
+   <dt>Телефон</dt><dd><a href="tel:${esc(String(o.phone).replace(/[^\d+]/g,''))}">${esc(o.phone)}</a></dd>
+   <dt>Email</dt><dd><a href="mailto:${esc(o.email)}">${esc(o.email)}</a></dd>
+   <dt>Нова пошта</dt><dd>${esc(o.city)}</dd>
+   <dt>Створено</dt><dd>${new Date(o.created).toLocaleString('uk-UA')}</dd>
+   <dt>Джерело</dt><dd>${esc(source(o))}${o.utm_campaign?' · '+esc(o.utm_campaign):''}</dd>
+   ${o.referrer?`<dt>Реферер</dt><dd>${esc(o.referrer)}</dd>`:''}
+   <dt>Пристрій</dt><dd style="font-size:13px;color:var(--soft)">${esc(o.device)}</dd>
+  </dl>
+  ${o.about?`<div class="about">${esc(o.about)}</div>`:''}
+  <div class="sts">${ST.map(([k,l])=>`<button class="sb s-${k}" data-s="${k}" aria-pressed="${o.status===k}">${l}</button>`).join('')}</div>
+  <label for="nt" style="font-weight:800">Нотатка</label>
+  <textarea id="nt" placeholder="Номер ТТН, домовленості, оплата">${esc(o.note)}</textarea>
+  <div class="row"><button class="btn" id="sv">Зберегти нотатку</button><button class="btn g" id="cp">Скопіювати для НП</button></div>`;
+  $('#cl').onclick=()=>{sel=null;D.hidden=true;renderList();};
+  D.querySelectorAll('.sb').forEach(b=>b.onclick=()=>save(o,{status:b.dataset.s}));
+  $('#sv').onclick=()=>save(o,{note:$('#nt').value});
+  $('#cp').onclick=async()=>{try{await navigator.clipboard.writeText(`${o.name}\n${o.phone}\n${o.city}`);toast('Скопійовано');}catch(e){toast('Не вдалося скопіювати');}};
+  const ph=$('#ph');
+  if(photos[o.id]){ph.style.backgroundImage=`url("${photos[o.id]}")`;ph.textContent='';return;}
+  try{const p=await call({action:'photo',id:o.id});photos[o.id]=`data:${p.type};base64,${p.data}`;if(sel===o.id){ph.style.backgroundImage=`url("${photos[o.id]}")`;ph.textContent='';}}
+  catch(e){ph.textContent='Фото не завантажилось';}
+}
+async function save(o,ch){
+  try{await call({action:'status',id:o.id,...ch});Object.assign(o,ch);toast(ch.status?'Статус: '+SL[ch.status]:'Нотатку збережено');renderStats();renderList();renderDetail();}
+  catch(e){toast(e.message==='unauthorized'?'Сесія скінчилась':'Не збереглося, спробуй ще');if(e.message==='unauthorized')login('Увійди знову.');}
+}
+async function load(manual){
+  if(busy||!token)return;busy=true;$('#rf')?.classList.add('spin');
+  try{const o=await call({action:'list'});const was=orders.filter(x=>x.status==='new').length;orders=o.orders;renderAll();
+    const now=orders.filter(x=>x.status==='new').length;if(!manual&&now>was)toast('Нове замовлення!');else if(manual)toast('Оновлено');}
+  catch(e){if(e.message==='unauthorized'){ls.set('kp_token',null);token=null;login('Пароль змінився, увійди знову.');}else if(manual)toast('Немає зв\'язку');}
+  finally{busy=false;$('#rf')?.classList.remove('spin');}
+}
+setInterval(()=>{if(document.visibilityState==='visible')load(false);},60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')load(false);});
+if(token){shell();load(false);}else login();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
