@@ -16,8 +16,8 @@ const HEAD = ['id', 'created', 'status', 'who', 'name', 'size', 'sizeLabel', 'pr
 
 const SIZES = {
   sq: { label: 'Квадрат 20×20 см', price: 1700 },
-  pt: { label: 'Портрет 30×40 см', price: 3200 },
-  lg: { label: 'Великий портрет 50×70 см', price: 4200 }
+  pt: { label: 'Портрет 30×40 см', price: 2666 },
+  lg: { label: 'Великий портрет 50×70 см', price: 4111 }
 };
 const RUSH_PRICE = 666;
 const STATUSES = ['new', 'paid', 'painting', 'shipped', 'done', 'cancelled'];
@@ -200,7 +200,7 @@ function confirm_(o) {
       ['Портрет для', o.name + (gift ? ' (подарунок)' : '')],
       ['Полотно', o.sizeLabel],
       ['Техніка', o.tech || 'на вибір художника'],
-      ['Терміново', o.rush ? 'так, 48 годин + стікер з сатаною' : 'ні, 3–5 днів'],
+      ['Терміново', o.rush ? 'так, 48 годин' : 'ні, 3–5 днів'],
       ['Сума', o.total + ' ₴'],
       ['Доставка', 'Нова пошта: ' + o.city]
     ];
