@@ -98,6 +98,7 @@ function createOrder_(b) {
     };
     sheet_().appendRow(HEAD.map(function (h) { return row[h]; }));
     notify_(row);
+    confirm_(row);
     return { ok: true, id: id, total: total };
   } finally {
     lock.releaseLock();
@@ -185,6 +186,43 @@ function notify_(o) {
         '',
         'Про людину: ' + (o.about || '—')
       ].join('\n')
+    });
+  } catch (e) { /* лист не критичний */ }
+}
+
+/** Лист-підтвердження замовнику. */
+function confirm_(o) {
+  try {
+    const esc = function (t) { return String(t).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+    const gift = o.who === 'friend';
+    const lines = [
+      ['Номер замовлення', o.id],
+      ['Портрет для', o.name + (gift ? ' (подарунок)' : '')],
+      ['Полотно', o.sizeLabel],
+      ['Техніка', o.tech || 'на вибір художника'],
+      ['Терміново', o.rush ? 'так, 48 годин + стікер з сатаною' : 'ні, 3–5 днів'],
+      ['Сума', o.total + ' ₴'],
+      ['Доставка', 'Нова пошта: ' + o.city]
+    ];
+    const rows = lines.map(function (l) {
+      return '<tr><td style="padding:6px 12px 6px 0;color:#6a6c7c">' + esc(l[0]) + '</td><td style="padding:6px 0;font-weight:700">' + esc(l[1]) + '</td></tr>';
+    }).join('');
+    const html =
+      '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1b1d2a">' +
+      '<div style="background:#ffd23f;padding:22px 24px;border-radius:16px 16px 0 0;font-size:26px;font-weight:700">Кислі пички</div>' +
+      '<div style="border:2px solid #1b1d2a;border-top:0;border-radius:0 0 16px 16px;padding:22px 24px">' +
+      '<p style="font-size:18px;margin:0 0 14px">Дякуємо! Замовлення прийнято, художник уже готує фарби.</p>' +
+      '<table style="border-collapse:collapse;font-size:15px;margin:0 0 16px">' + rows + '</table>' +
+      '<p style="margin:0 0 10px">Ми напишемо тобі найближчим часом, щоб узгодити оплату й деталі. Якщо щось хочеш уточнити, просто відповідай на цей лист.</p>' +
+      '<p style="margin:0;color:#6a6c7c;font-size:13px">Сум не лікуємо. Трошки сміємося разом з ним.</p>' +
+      '</div></div>';
+    MailApp.sendEmail({
+      to: o.email,
+      subject: 'Кислі пички: замовлення ' + o.id + ' прийнято',
+      name: 'Кислі пички',
+      replyTo: Session.getEffectiveUser().getEmail(),
+      htmlBody: html,
+      body: lines.map(function (l) { return l[0] + ': ' + l[1]; }).join('\n') + '\n\nМи напишемо найближчим часом, щоб узгодити оплату.'
     });
   } catch (e) { /* лист не критичний */ }
 }

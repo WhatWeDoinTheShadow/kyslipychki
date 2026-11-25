@@ -156,6 +156,18 @@ footer .lg{color:var(--bg);height:60px;width:200px}
 .ppin li{margin-bottom:4px}
 .pptop{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
 .req{background:var(--tint);border-radius:12px;padding:12px 16px;font-size:15px}
+@media(min-width:1000px){
+.hero{min-height:calc(100svh - 78px);display:flex;align-items:center;padding-block:clamp(16px,3vh,40px)}
+.hero .wrap{width:100%;display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);grid-template-areas:"top pair" "note pair";gap:6px 48px;align-items:center}
+.hero .top{grid-area:top;grid-template-columns:minmax(0,1fr);align-items:start;gap:18px}
+.hero h1{font-size:clamp(46px,4.3vw,68px);margin:0}
+.hero .lead{margin-bottom:18px}
+.pair{grid-area:pair;margin:0;max-width:none;grid-template-columns:auto auto auto;justify-content:center;gap:12px}
+.hero .arr{width:86px}.hero .arr span{font-size:24px}
+.pair .canv img{--h:min(calc(100svh - 250px),calc(34vw - 60px),420px);height:var(--h);width:auto;max-width:none}
+.pair .polaroid img{height:calc(min(calc(100svh - 250px),calc(34vw - 60px),420px)*.7);width:auto;max-width:none}
+.hero .sample{grid-area:note;align-self:start;margin:0}
+}
 @media(max-width:900px){.trio{grid-template-columns:minmax(0,1fr)}.tc{transform:none}.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.prices{grid-template-columns:minmax(0,1fr)}.ogrid{grid-template-columns:minmax(0,1fr)}.sum{position:static}}
 @media(max-width:720px){.pgrid,.hero .top,.manifest,.honest,.two{grid-template-columns:minmax(0,1fr)}nav a.l{display:none}}
 @media(max-width:720px){.ex{grid-template-columns:minmax(0,1fr)}.ex .mini{left:8px}}
