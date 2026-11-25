@@ -16,7 +16,7 @@
    COLOUR sunny yellow field, ink, rain blue as support, coral for actions
    TYPE Caveat (hand lettering) + Nunito
    LAYOUT laptop: title band over a full-width sketch scene; phone: title, picture, button, then sections stacked */
-:root{color-scheme:light dark;--bg:light-dark(#ffffff,#14161c);--ink:light-dark(#1b1d2a,#f3f0e9);--soft:light-dark(#5b5e70,#b9b8c4);--sun:light-dark(#ffd23f,#2c2716);--sun2:light-dark(#ffe58a,#3b3420);--rain:light-dark(#5b7bd5,#8aa3ee);--pop:light-dark(#ff5a5f,#ff7a7e);--paper:light-dark(#ffffff,#1d2029);--line:light-dark(#e6e2d6,#323644);--tint:light-dark(#f4f6ff,#1a1e2b)}
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#14161c);--ink:light-dark(#1b1d2a,#f3f0e9);--soft:light-dark(#5b5e70,#b9b8c4);--sun:light-dark(#ffd23f,#262a52);--sun2:light-dark(#ffe58a,#353a6e);--rain:light-dark(#5b7bd5,#8aa3ee);--pop:light-dark(#ff5a5f,#ff7a7e);--paper:light-dark(#ffffff,#1d2029);--line:light-dark(#e6e2d6,#323644);--tint:light-dark(#f4f6ff,#1a1e2b)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 html{scroll-behavior:smooth;scroll-padding-top:72px}
@@ -30,7 +30,9 @@ h3{font-size:30px}
 p{margin:0 0 1em;max-width:62ch}
 .band{padding-block:clamp(36px,5vw,72px);padding-left:max(5vw,16px);padding-right:max(5vw,16px)}
 .wrap{max-width:1180px;margin:0 auto}
-nav{position:sticky;top:0;z-index:5;background:var(--sun);display:flex;flex-wrap:wrap;align-items:center;gap:6px 22px;padding:12px max(5vw,16px);border-bottom:2px solid var(--ink)}
+nav{position:sticky;top:0;z-index:5;background:#1b1d2a;color:#fff6dc;box-shadow:0 3px 0 #ffd23f;display:flex;flex-wrap:wrap;align-items:center;gap:6px 22px;padding:12px max(5vw,16px)}
+nav .lg{color:#fff6dc}
+nav .btn{border-color:#fff6dc;box-shadow:3px 3px 0 #ffd23f}
 .logo{font:700 32px/1 Caveat,cursive;text-decoration:none;margin-right:auto}
 .logo span{color:var(--pop)}
 nav a.l{text-decoration:none;font-weight:600}
@@ -63,7 +65,7 @@ figure{margin:0}
 .notes{list-style:none;padding:0;margin:0 0 20px;display:grid;gap:16px}
 .notes li{border-left:4px solid var(--sun);padding-left:14px}
 .notes b{display:block;font:700 26px/1.1 Caveat,cursive}
-.sumart{display:block;width:100%;border-radius:12px;border:2px solid var(--ink);margin-bottom:14px;aspect-ratio:4/3;object-fit:cover;object-position:50% 20%}
+.check .devil{width:32px;height:32px;display:inline-block;margin-bottom:0;vertical-align:middle;flex:none;transform:rotate(-12deg);margin:-4px 2px;filter:drop-shadow(1px 2px 0 rgba(0,0,0,.25))}
 .manifest{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:24px 56px;align-items:start}
 .big{font:700 clamp(34px,4vw,48px)/1.1 Caveat,cursive;margin:0}
 .big em{font-style:normal;background:linear-gradient(transparent 62%,var(--sun2) 62%)}
@@ -119,10 +121,11 @@ textarea{min-height:96px;resize:vertical}
 details{border-bottom:2px solid var(--line);padding:14px 0}
 details summary{cursor:pointer;font-weight:800;font-size:18px;list-style-position:outside}
 details p{margin:10px 0 0}
-footer{background:var(--ink);color:var(--bg);display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:16px 40px;align-items:center}
-footer .logo{color:var(--bg)}
+@media(min-width:900px){.faqs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 48px;align-items:start}.faqs summary{cursor:default;list-style:none}.faqs summary::-webkit-details-marker{display:none}}
+footer{background:#1b1d2a;color:#fff6dc;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:16px 40px;align-items:center}
+footer .logo{color:#fff6dc}
 .lg{display:block;height:52px;width:174px;color:var(--ink)}
-footer .lg{color:var(--bg);height:60px;width:200px}
+footer .lg{color:#fff6dc;height:60px;width:200px}
 .quote{font-size:clamp(40px,5.6vw,68px);max-width:16ch;margin-bottom:16px}
 .qsub{font-size:18px;margin-bottom:32px}
 .trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,1.6vw,26px);margin:8px calc(-1*max(5vw,16px)) 0;padding:0 max(2vw,16px)}
@@ -145,7 +148,8 @@ footer .lg{color:var(--bg);height:60px;width:200px}
 .flinks{display:flex;align-items:center;gap:6px 22px;flex-wrap:wrap;font-size:10pt;line-height:1.3}
 .flinks a{text-decoration:underline;text-underline-offset:3px;opacity:.85}
 .flinks a:hover{opacity:1}
-@media(min-width:1100px){footer .fcol{flex-wrap:nowrap}footer .fcol span{max-width:24ch;line-height:1.35}}
+footer .fcol{flex-direction:column;align-items:flex-start;gap:8px}
+footer .flinks a,footer .flinks span a{color:inherit}
 @media(max-width:820px){footer{grid-template-columns:minmax(0,1fr)}footer .btn{justify-self:start}}
 .pp{position:fixed;inset:0;z-index:20;background:rgba(15,16,24,.55);display:none;overflow-y:auto;padding:24px max(4vw,12px)}
 .pp.on{display:block}
@@ -350,7 +354,7 @@ footer .lg{color:var(--bg);height:60px;width:200px}
 
         <fieldset>
           <legend>Додатково</legend>
-          <label class="check"><input type="checkbox" id="rush"> Терміново, за 48 годин, плюс стікер з сатаною <span class="price">+666 ₴</span></label>
+          <label class="check"><input type="checkbox" id="rush"> Терміново, за 48 годин <svg class="devil" viewBox="0 0 48 48" aria-label="стікер"><g stroke="#1b1d2a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"><path d="M10 16 6 4l12 7M38 16l4-12-12 7" fill="#fff"/><circle cx="24" cy="27" r="18" fill="#fff"/><path d="M12 15 9 7l8 5M36 15l3-8-8 5" fill="#ff5a5f"/><circle cx="24" cy="27" r="14" fill="#ff5a5f"/><path d="M16 22l6 3M32 22l-6 3" fill="none"/><circle cx="19" cy="27" r="1.8" fill="#1b1d2a" stroke="none"/><circle cx="29" cy="27" r="1.8" fill="#1b1d2a" stroke="none"/><path d="M17 32q7 6 14 0" fill="none"/><path d="M21 34l1 3 2-2.5" fill="#fff" stroke-width="1.5"/></g></svg> <span class="price">+666 ₴</span></label>
         </fieldset>
 
         <label class="check"><input type="checkbox" id="ok"> <span id="okText">Людина на фото не буде проти, або я спершу покажу портрет сам і вирішу, чи дарувати.</span></label>
@@ -366,7 +370,6 @@ footer .lg{color:var(--bg);height:60px;width:200px}
       </div>
 
       <aside class="card sum" aria-live="polite">
-        <img class="sumart" src="after.jpg" alt="Приклад готового портрета" width="900" height="1261" loading="lazy">
         <h3>Твоє замовлення</h3>
         <dl id="sumList"></dl>
         <div class="total"><span>Разом</span><span id="tot">0 ₴</span></div>
@@ -402,11 +405,13 @@ footer .lg{color:var(--bg);height:60px;width:200px}
 <section class="band" id="faq">
   <div class="wrap">
     <h2>Питання</h2>
+    <div class="faqs">
     <details open><summary>Це точно малює людина, а не нейромережа?</summary><p>Так, кожен портрет малює художник. Тільки руками і справжніми фарбами на полотні, ми не працюємо на планшетах. Якщо хочете, художник зробить селфі з готовою картиною перед відправкою.</p></details>
     <details><summary>А якщо друг образиться?</summary><p>Ми малюємо з любов'ю: смішними стають обставини (дощ, хмаринка, гора посуду), а не зовнішність. Картина приходить тобі, тож ти сам вирішуєш, коли і як її подарувати. Напиши в анкеті, чого точно не торкатися.</p></details>
     <details><summary>Яке фото підійде?</summary><p>Будь-яке, де видно обличчя й емоцію: селфі в маршрутці, фото з-під ковдри, кадр із відеодзвінка. Якість не важлива, важливий настрій.</p></details>
     <details><summary>Скільки чекати?</summary><p>Зазвичай 3–5 днів на малювання. Термінове замовлення за 48 годин. Доставка Новою поштою додає 1–3 дні.</p></details>
     <details><summary>Що з фото після замовлення?</summary><p>Фото бачить лише художник. Ми не публікуємо роботи без дозволу і видаляємо оригінал після завершення.</p></details>
+    </div>
   </div>
 </section>
 
@@ -491,7 +496,7 @@ footer .lg{color:var(--bg);height:60px;width:200px}
   <div class="flinks">
     <a href="#privacy">Політика конфіденційності</a>
     <a href="#faq">Питання і відповіді</a>
-    <span>Сайт розроблено Webrarium</span>
+    <span>Сайт розроблено <a href="https://webrarium.com" target="_blank" rel="noopener">Webrarium</a></span>
   </div>
   <a class="btn" href="#order">Замовити</a>
 </footer>
@@ -522,7 +527,7 @@ function render(){
   $('nameL').textContent=gift?'Як звати друга':'Як тебе звати';
   $('okText').textContent=gift?'Людина на фото не буде проти, або я спершу покажу портрет сам і вирішу, чи дарувати.':'Це моє фото, і я хочу, щоб його намалювали.';
   const rows=[['Кого',gift?'Друга, у подарунок':'Себе'],['Полотно',st.n+' '+st.sz,st.p],['Техніка',val('tech')]];
-  if($('rush').checked)rows.push(['Терміново, 48 год + стікер з сатаною','',666]);
+  if($('rush').checked)rows.push(['Терміново, 48 год','',666]);
   rows.push(['Фото',photoName||'ще не додано'],['Доставка','Нова пошта, за тарифом']);
   const tot=rows.reduce((a,r)=>a+(r[2]||0),0);
   const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -595,6 +600,11 @@ f.addEventListener('submit',async e=>{
 });
 $('again').addEventListener('click',()=>{f.reset();photoName='';photoFile=null;$('thumb').style.backgroundImage='';$('thumb').textContent='фото';$('fname').textContent='Натисни або перетягни фото сюди';f.hidden=false;$('done').hidden=true;render();});
 render();
+const mq=matchMedia('(min-width:900px)');
+const faqs=[...document.querySelectorAll('.faqs details')];
+function faqMode(){if(mq.matches)faqs.forEach(d=>d.open=true);}
+faqMode();mq.addEventListener('change',faqMode);
+faqs.forEach(d=>d.addEventListener('toggle',()=>{if(mq.matches&&!d.open)d.open=true;}));
 const pp=$('pp');
 function route(){const on=location.hash==='#privacy';pp.classList.toggle('on',on);document.body.style.overflow=on?'hidden':'';if(on)pp.scrollTop=0;}
 window.addEventListener('hashchange',route);route();

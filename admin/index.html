@@ -179,7 +179,7 @@ async function renderDetail(){
   <div class="ph" id="ph">Завантажую фото…</div>
   <dl>
    <dt>Для кого</dt><dd>${esc(o.name)} · ${o.who==='friend'?'подарунок другу':'для себе'}</dd>
-   <dt>Полотно</dt><dd>${esc(o.sizeLabel)} · ${esc(o.tech||'—')}${o.rush?' · <b>терміново 48 год + стікер</b>':''}</dd>
+   <dt>Полотно</dt><dd>${esc(o.sizeLabel)} · ${esc(o.tech||'—')}${o.rush?' · <b>терміново 48 год</b>':''}</dd>
    <dt>Сума</dt><dd><b>${money(o.total)}</b></dd>
    <dt>Телефон</dt><dd><a href="tel:${esc(String(o.phone).replace(/[^\d+]/g,''))}">${esc(o.phone)}</a></dd>
    <dt>Email</dt><dd><a href="mailto:${esc(o.email)}">${esc(o.email)}</a></dd>
