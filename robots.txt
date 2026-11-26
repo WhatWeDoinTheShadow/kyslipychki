@@ -1,2 +1,6 @@
 User-agent: *
 Disallow: /admin/
+Disallow: /brand/
+Disallow: /backend/
+
+Sitemap: https://kyslipychki.shop/sitemap.xml
