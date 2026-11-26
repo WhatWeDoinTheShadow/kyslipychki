@@ -22,6 +22,13 @@
 <link rel="apple-touch-icon" href="admin/icon-192.png">
 <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Organization", "@id": "https://kyslipychki.shop/#org", "name": "Кислі пички", "url": "https://kyslipychki.shop/", "logo": "https://kyslipychki.shop/logo.svg", "image": "https://kyslipychki.shop/og.jpg"}, {"@type": "WebSite", "@id": "https://kyslipychki.shop/#site", "url": "https://kyslipychki.shop/", "name": "Кислі пички", "inLanguage": "uk", "publisher": {"@id": "https://kyslipychki.shop/#org"}}, {"@type": "Product", "@id": "https://kyslipychki.shop/#portrait", "name": "Портрет-шарж з фото фарбами на полотні", "description": "Художник малює від руки теплий смішний портрет за твоїм сумним фото: олія, акрил або пастель на полотні на підрамнику. Три розміри полотна.", "image": ["https://kyslipychki.shop/after.jpg", "https://kyslipychki.shop/gift.jpg"], "brand": {"@id": "https://kyslipychki.shop/#org"}, "offers": {"@type": "AggregateOffer", "priceCurrency": "UAH", "lowPrice": "1700", "highPrice": "4111", "offerCount": "3", "availability": "https://schema.org/InStock", "url": "https://kyslipychki.shop/#order", "offers": [{"@type": "Offer", "name": "Квадрат 20×20 см", "price": "1700", "priceCurrency": "UAH"}, {"@type": "Offer", "name": "Портрет 30×40 см", "price": "2666", "priceCurrency": "UAH"}, {"@type": "Offer", "name": "Великий портрет 50×70 см", "price": "4111", "priceCurrency": "UAH"}]}}]}</script>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<!-- Google tag (Google Analytics) -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-NXWSKHWM"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+</script>
 <script src="config.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -501,6 +508,7 @@ footer .flinks a,footer .flinks span a{color:inherit}
       <li>Місто, відділення Нової пошти та телефон отримувача для доставки.</li>
       <li>Дані про оплату: суму та статус. Номер картки ми не бачимо і не зберігаємо, його обробляє платіжний сервіс.</li>
       <li>Технічні дані браузера, потрібні, щоб сайт працював.</li>
+      <li>Знеособлену статистику відвідувань через Google Analytics: які сторінки переглядають, з якого джерела прийшли, тип пристрою. Фото, імена та контакти з форми туди не передаються.</li>
     </ul>
 
     <h3>3. Навіщо</h3>
@@ -530,6 +538,7 @@ footer .flinks a,footer .flinks span a{color:inherit}
       <li>Службі доставки «Нова пошта»: ім'я, телефон, місто і відділення.</li>
       <li>Платіжному сервісу: дані, потрібні для оплати.</li>
       <li>Сервісам хостингу та пошти, на яких працює сайт, лише в обсязі, потрібному для їхньої роботи.</li>
+      <li>Google Analytics: знеособлену статистику відвідувань. Збір можна вимкнути блокувальником реклами або доповненням Google Analytics Opt-out.</li>
       <li>Державним органам, якщо цього прямо вимагає закон.</li>
     </ul>
 
@@ -658,6 +667,7 @@ f.addEventListener('submit',async e=>{
     const out=await res.json();
     if(!out.ok)throw new Error(out.error||'fail');
     $('doneText').textContent=`Замовлення ${out.id} на ${fmt(out.total)}. Портрет для: ${payload.name}. Ми напишемо на ${payload.email}, щоб узгодити оплату.`;
+    try{gtag('event','generate_lead',{currency:'UAH',value:out.total,size:payload.size,rush:!!payload.rush,who:payload.who});}catch(e){}
     f.hidden=true;$('done').hidden=false;
     $('done').scrollIntoView({behavior:'smooth',block:'start'});
   }catch(err){
