@@ -2,12 +2,13 @@
  * Кислі пички — бекенд замовлень на Google Apps Script.
  *
  * Як розгорнути:
- * 1. Таблиця → Розширення → Apps Script, вставити цей файл.
+ * 1. Окремий проєкт Apps Script в акаунті kyslipychki@gmail.com, вставити цей файл, вписати SPREADSHEET_ID.
  * 2. Запустити функцію setup() один раз і дати доступ. У журналі з'явиться пароль адмінки.
  * 3. Розгорнути → Нове розгортання → Веб-застосунок:
  *    «Виконувати як: я», «Хто має доступ: усі». Скопіювати URL у config.js сайту.
  */
 
+const SPREADSHEET_ID = '1qnL1-woMteoMTsZ5aUOsnx0XI4X10zNlD_pM7Hp-7U4'; // таблиця «Кислі пички — замовлення» у kyslipychki@gmail.com
 const SHEET_NAME = 'Замовлення';
 const FOLDER_NAME = 'Кислі пички — фото замовлень';
 const HEAD = ['id', 'created', 'status', 'who', 'name', 'size', 'sizeLabel', 'price', 'tech', 'rush', 'total',
@@ -149,7 +150,7 @@ function auth_(token) {
 }
 
 function sheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) {
     sh = ss.insertSheet(SHEET_NAME);
