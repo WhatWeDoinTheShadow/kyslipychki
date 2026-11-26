@@ -85,6 +85,19 @@ textarea{width:100%;min-height:80px;border-radius:12px;border:2px solid var(--li
 .login h1{font-size:44px}
 .login input{height:50px;border-radius:12px;border:2px solid var(--line);background:var(--bg);padding:0 14px;font-size:16px}
 .err{color:var(--pop);font-weight:800;min-height:1.2em;margin:0}
+.tabs{display:flex;gap:6px;margin-right:auto}
+.tab{height:44px;padding:0 14px;border-radius:12px;border:2px solid var(--ink);background:var(--card);font:700 24px Caveat,cursive;cursor:pointer}
+.tab[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.tab b{font:800 12px Nunito,sans-serif;background:var(--pop);color:#fff;border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:middle}
+.rv{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px 16px;display:grid;gap:8px}
+.rv.pending{border-color:var(--ink);box-shadow:3px 3px 0 var(--ink)}
+.rv .top{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.rv .stars{color:#ffb800;font-size:22px;letter-spacing:1px}
+.rv .au{font-weight:800}
+.rv .tx{white-space:pre-wrap}
+.rv .meta{color:var(--soft);font-size:13px;display:flex;flex-wrap:wrap;gap:2px 12px}
+.rv .pimg{max-width:220px;border-radius:10px;display:block}
+.r-pending{--c:#ff5a5f}.r-published{--c:#2e9e62}.r-hidden{--c:#9a9aa6}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
 .toast.on{opacity:1}
 :focus-visible{outline:3px solid var(--rain);outline-offset:2px}
@@ -105,7 +118,8 @@ const $=s=>document.querySelector(s);
 const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>(+n||0).toLocaleString('uk-UA')+' ₴';
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
-let token=ls.get('kp_token'),orders=[],filter='all',q='',sel=null,photos={},busy=false;
+let token=ls.get('kp_token'),orders=[],filter='all',q='',sel=null,photos={},busy=false,view='orders',reviews=[];
+const RS={pending:'Новий',published:'На сайті',hidden:'Сховано'};
 
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2200);}
 async function call(body){
@@ -137,14 +151,16 @@ function login(msg=''){
 }
 
 function shell(){
-  $('#app').innerHTML=`<header><h1>Замовлення</h1>
+  $('#app').innerHTML=`<header><div class="tabs"><button class="tab" data-v="orders" aria-pressed="${view==='orders'}">Замовлення</button><button class="tab" data-v="reviews" aria-pressed="${view==='reviews'}">Відгуки<span id="rvc"></span></button></div>
   <button class="ib" id="rf" aria-label="Оновити"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg></button>
   <button class="ib" id="lo" aria-label="Вийти">Вийти</button></header>
-  <main><div class="stats" id="stats"></div><div class="srcs" id="srcs"></div>
+  <main id="rvmain" ${view==='reviews'?'':'hidden'}><div class="list" id="rvlist"><div class="empty">Завантажую відгуки…</div></div></main>
+  <main id="ormain" ${view==='orders'?'':'hidden'}><div class="stats" id="stats"></div><div class="srcs" id="srcs"></div>
   <div class="chips" id="chips" role="toolbar" aria-label="Фільтр за статусом"></div>
   <input class="search" id="q" type="search" placeholder="Пошук: ім'я, телефон, email, номер" aria-label="Пошук">
   <div class="grid"><div class="list" id="list"></div><section class="detail" id="detail" hidden></section></div></main>`;
   $('#rf').onclick=()=>load(true);
+  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{view=b.dataset.v;document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===view));$('#rvmain').hidden=view!=='reviews';$('#ormain').hidden=view!=='orders';if(view==='reviews')loadReviews();});
   $('#lo').onclick=()=>{ls.set('kp_token',null);token=null;login();};
   $('#q').oninput=e=>{q=e.target.value.toLowerCase();renderList();};
   renderAll();
@@ -193,7 +209,9 @@ async function renderDetail(){
   <div class="sts">${ST.map(([k,l])=>`<button class="sb s-${k}" data-s="${k}" aria-pressed="${o.status===k}">${l}</button>`).join('')}</div>
   <label for="nt" style="font-weight:800">Нотатка</label>
   <textarea id="nt" placeholder="Номер ТТН, домовленості, оплата">${esc(o.note)}</textarea>
-  <div class="row"><button class="btn" id="sv">Зберегти нотатку</button><button class="btn g" id="cp">Скопіювати для НП</button></div>`;
+  <div class="row"><button class="btn" id="sv">Зберегти нотатку</button><button class="btn g" id="cp">Скопіювати для НП</button></div>
+  ${o.status==='done'?`<div class="row"><button class="btn g" id="rq">Надіслати лист про відгук ще раз</button></div>`:''}`;
+  if($('#rq'))$('#rq').onclick=async()=>{try{await call({action:'sendReviewRequest',id:o.id});toast('Лист надіслано');}catch(e){toast('Не вдалося надіслати');}};
   $('#cl').onclick=()=>{sel=null;D.hidden=true;renderList();};
   D.querySelectorAll('.sb').forEach(b=>b.onclick=()=>save(o,{status:b.dataset.s}));
   $('#sv').onclick=()=>save(o,{note:$('#nt').value});
@@ -203,12 +221,33 @@ async function renderDetail(){
   try{const p=await call({action:'photo',id:o.id});photos[o.id]=`data:${p.type};base64,${p.data}`;if(sel===o.id){ph.style.backgroundImage=`url("${photos[o.id]}")`;ph.textContent='';}}
   catch(e){ph.textContent='Фото не завантажилось';}
 }
+async function loadReviews(){
+  try{const r=await call({action:'reviewsAdmin'});reviews=r.reviews;renderReviews();}
+  catch(e){$('#rvlist').innerHTML='<div class="empty">Не вдалося завантажити відгуки.</div>';}
+}
+function renderReviews(){
+  const n=reviews.filter(r=>r.status==='pending').length;if($('#rvc'))$('#rvc').innerHTML=n?`<b>${n}</b>`:'';
+  if(!$('#rvlist'))return;
+  $('#rvlist').innerHTML=reviews.length?reviews.map(r=>`<div class="rv ${esc(r.status)} r-${esc(r.status)}" data-id="${esc(r.id)}">
+    <div class="top"><span class="stars" aria-label="${+r.rating} з 5">${'★'.repeat(+r.rating)}${'☆'.repeat(5-r.rating)}</span><span class="au">${esc(String(r.author).replace(/^'/,''))}</span><span class="tag">${RS[r.status]||esc(r.status)}</span>${r.consent==='так'?'':'<span class="tag" style="--c:#e5a800">без згоди на публікацію</span>'}</div>
+    <div class="tx">${esc(String(r.text).replace(/^'/,''))}</div>
+    ${r.photoId?`<div class="pw"><button class="btn g ph-b">Показати фото</button></div>`:''}
+    <div class="meta"><span>${esc(r.orderId)}</span><span>${ago(r.created)}</span><span>${esc(r.email)}</span></div>
+    <div class="row">${r.status!=='published'&&r.consent==='так'?'<button class="btn" data-s="published">Опублікувати</button>':''}${r.status!=='hidden'?'<button class="btn g" data-s="hidden">Сховати</button>':''}</div></div>`).join('')
+    :'<div class="empty">Відгуків поки немає. Коли ставиш замовленню статус «Вручено», клієнту автоматично йде лист із проханням залишити відгук.</div>';
+  $('#rvlist').querySelectorAll('.rv').forEach(el=>{
+    const r=reviews.find(x=>x.id===el.dataset.id);
+    el.querySelectorAll('[data-s]').forEach(b=>b.onclick=async()=>{try{await call({action:'reviewStatus',id:r.id,status:b.dataset.s});r.status=b.dataset.s;toast(b.dataset.s==='published'?'Відгук на сайті':'Відгук сховано');renderReviews();}catch(e){toast('Не вдалося');}});
+    const pb=el.querySelector('.ph-b');if(pb)pb.onclick=async()=>{pb.textContent='Завантажую…';try{const p=await call({action:'reviewPhoto',id:r.id});pb.parentNode.innerHTML=`<img class="pimg" alt="Фото від клієнта" src="data:${esc(p.type)};base64,${p.data}">`;}catch(e){pb.textContent='Не вдалося';}};
+  });
+}
 async function save(o,ch){
-  try{await call({action:'status',id:o.id,...ch});Object.assign(o,ch);toast(ch.status?'Статус: '+SL[ch.status]:'Нотатку збережено');renderStats();renderList();renderDetail();}
+  try{await call({action:'status',id:o.id,...ch});Object.assign(o,ch);toast(ch.status==='done'?'Вручено. Клієнту пішов лист про відгук':ch.status?'Статус: '+SL[ch.status]:'Нотатку збережено');renderStats();renderList();renderDetail();}
   catch(e){toast(e.message==='unauthorized'?'Сесія скінчилась':'Не збереглося, спробуй ще');if(e.message==='unauthorized')login('Увійди знову.');}
 }
 async function load(manual){
   if(busy||!token)return;busy=true;$('#rf')?.classList.add('spin');
+  if(view==='reviews')loadReviews();
   try{const o=await call({action:'list'});const was=orders.filter(x=>x.status==='new').length;orders=o.orders;renderAll();
     const now=orders.filter(x=>x.status==='new').length;if(!manual&&now>was)toast('Нове замовлення!');else if(manual)toast('Оновлено');}
   catch(e){if(e.message==='unauthorized'){ls.set('kp_token',null);token=null;login('Пароль змінився, увійди знову.');}else if(manual)toast('Немає зв\'язку');}
@@ -216,7 +255,7 @@ async function load(manual){
 }
 setInterval(()=>{if(document.visibilityState==='visible')load(false);},60000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')load(false);});
-if(token){shell();load(false);}else login();
+if(token){shell();load(false);call({action:'reviewsAdmin'}).then(r=>{reviews=r.reviews;renderReviews();}).catch(()=>{});}else login();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 </script>

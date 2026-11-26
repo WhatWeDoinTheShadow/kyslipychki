@@ -1,5 +1,5 @@
 // Кешуємо лише оболонку адмінки; замовлення завжди беруться з мережі.
-const CACHE = 'kp-admin-v1';
+const CACHE = 'kp-admin-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', '../config.js', '../icon.svg'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

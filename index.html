@@ -151,6 +151,14 @@ details summary{cursor:pointer;font-weight:800;font-size:18px;list-style-positio
 details p{margin:10px 0 0}
 @media(min-width:900px){.faqs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 48px;align-items:start}.faqs summary{cursor:default;list-style:none}.faqs summary::-webkit-details-marker{display:none}}
 .readl{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 28px;font-weight:700}.readl a{text-underline-offset:3px}
+.rvs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px;margin-top:8px}
+.rvc{background:var(--paper);border:2px solid var(--ink);border-radius:18px;padding:18px 20px;box-shadow:4px 4px 0 var(--ink);display:flex;flex-direction:column;gap:10px;margin:0}
+.rvc .st{color:#ffb800;font-size:22px;letter-spacing:2px}
+.rvc blockquote{margin:0;white-space:pre-line}
+.rvc figcaption{font-weight:800;margin-top:auto}
+.rvc figcaption span{font-weight:400;color:var(--soft);font-size:14px;margin-left:6px}
+.rvc img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;border:2px solid var(--ink)}
+.rvsum{font:700 26px Caveat,cursive;color:var(--soft)}
 footer{background:#1b1d2a;color:#fff6dc;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:16px 40px;align-items:center}
 footer .logo{color:#fff6dc}
 .lg{display:block;height:52px;width:174px;color:var(--ink)}
@@ -379,6 +387,14 @@ footer .flinks a,footer .flinks span a{color:inherit}
       </ol>
       <p class="recnote">Хочеш поділитися реакцією з нами? Надішли відео на пошту з листа-підтвердження. Покажемо його на сайті тільки зі згоди людини на відео.</p>
     </div>
+  </div>
+</section>
+
+<section class="band" id="reviews" hidden>
+  <div class="wrap">
+    <h2>Що кажуть ті, кому дарували</h2>
+    <div class="rvsum" id="rvsum"></div>
+    <div class="rvs" id="rvs"></div>
   </div>
 </section>
 
@@ -703,6 +719,27 @@ window.addEventListener('hashchange',route);route();
 pp.addEventListener('click',e=>{if(e.target===pp)location.hash='top';});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&pp.classList.contains('on'))location.hash='top';});
 }
+
+/* відгуки: показуємо лише опубліковані, і додаємо рейтинг у розмітку товару */
+document.addEventListener('DOMContentLoaded',async()=>{
+  const api=window.KP_API;if(!api)return;
+  try{
+    const r=await(await fetch(api,{method:'POST',body:JSON.stringify({action:'reviews'})})).json();
+    const L=(r&&r.reviews)||[];if(!L.length)return;
+    const e=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const avg=L.reduce((a,x)=>a+x.rating,0)/L.length;
+    document.getElementById('rvsum').textContent=`${avg.toFixed(1).replace('.',',')} з 5 · ${L.length} ${L.length%10===1&&L.length%100!==11?'відгук':(L.length%10>=2&&L.length%10<=4&&(L.length%100<10||L.length%100>=20))?'відгуки':'відгуків'}`;
+    document.getElementById('rvs').innerHTML=L.slice(0,9).map(x=>`<figure class="rvc">${x.photo?`<img src="${e(x.photo)}" alt="Портрет від Кислих пичок у ${e(x.author)}" loading="lazy">`:''}<div class="st" aria-label="${x.rating} з 5">${'★'.repeat(x.rating)}${'☆'.repeat(5-x.rating)}</div><blockquote>${e(x.text)}</blockquote><figcaption>${e(x.author)}<span>${new Date(x.date).toLocaleDateString('uk-UA',{month:'long',year:'numeric'})}</span></figcaption></figure>`).join('');
+    document.getElementById('reviews').hidden=false;
+    const ld=document.querySelector('script[type="application/ld+json"]');
+    const d=JSON.parse(ld.textContent),p=d['@graph'].find(n=>n['@type']==='Product');
+    if(p){
+      p.aggregateRating={'@type':'AggregateRating',ratingValue:+avg.toFixed(2),reviewCount:L.length,bestRating:5,worstRating:1};
+      p.review=L.slice(0,10).map(x=>({'@type':'Review',author:{'@type':'Person',name:x.author},datePublished:x.date,reviewBody:x.text,reviewRating:{'@type':'Rating',ratingValue:x.rating,bestRating:5,worstRating:1}}));
+      ld.textContent=JSON.stringify(d);
+    }
+  }catch(err){}
+});
 </script>
 </body>
 </html>

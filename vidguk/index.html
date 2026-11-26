@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Залишити відгук — Кислі пички</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#ffd23f">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/page.css">
+<script src="/config.js"></script>
+<style>
+.box{border:2px solid var(--ink);border-radius:20px;background:var(--paper);box-shadow:5px 5px 0 var(--ink);padding:clamp(20px,4vw,36px);margin-top:20px}
+.stars{display:flex;gap:6px;margin:6px 0 4px}
+.stars button{appearance:none;border:0;background:none;padding:2px;cursor:pointer;font-size:46px;line-height:1;color:var(--line);transition:transform .1s}
+.stars button.on{color:#ffb800}
+.stars button:hover{transform:scale(1.12)}
+.stars button:focus-visible{outline:3px solid var(--rain);border-radius:8px}
+.rate-word{font:700 24px Caveat,cursive;min-height:1.2em;color:var(--soft)}
+label.f{display:block;font-weight:800;margin:20px 0 6px}
+input[type=text],textarea{width:100%;font:inherit;color:inherit;background:var(--bg);border:2px solid var(--ink);border-radius:12px;padding:12px 14px}
+textarea{min-height:140px;resize:vertical}
+.hint{font-size:14px;color:var(--soft);margin:6px 0 0}
+.drop{display:flex;align-items:center;gap:14px;border:2px dashed var(--ink);border-radius:12px;padding:12px;cursor:pointer}
+.drop img{width:72px;height:72px;object-fit:cover;border-radius:8px;display:none}
+.check{display:flex;gap:10px;align-items:flex-start;margin:20px 0;font-weight:600}
+.check input{width:22px;height:22px;margin-top:2px;accent-color:#ff5a5f;flex:none}
+.err{color:var(--pop);font-weight:800;min-height:1.4em}
+.msg{text-align:center;padding:24px 0}
+.msg .big{font:700 clamp(40px,7vw,60px)/1.05 Caveat,cursive}
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="/" aria-label="Кислі пички, на головну"><img src="/logo-white.svg" alt="Кислі пички" width="160" height="48"></a>
+</nav>
+<main class="band"><div class="narrow">
+  <h1>Як вам портрет?</h1>
+  <p id="sub">Хвилинку, перевіряємо посилання…</p>
+
+  <form class="box" id="f" hidden novalidate>
+    <b>Оцінка</b>
+    <div class="stars" id="stars" role="radiogroup" aria-label="Оцінка від 1 до 5"></div>
+    <div class="rate-word" id="word" aria-live="polite"></div>
+
+    <label class="f" for="text">Кілька слів</label>
+    <textarea id="text" maxlength="1500" placeholder="Як відреагувала людина, коли побачила картину? Що сподобалось, що ні?"></textarea>
+
+    <label class="f" for="author">Як вас підписати</label>
+    <input type="text" id="author" maxlength="60" placeholder="Наприклад: Оля, Київ" autocomplete="given-name">
+    <p class="hint">Можна лише ім'я. Прізвище, телефон чи email на сайті не показуємо.</p>
+
+    <label class="f">Фото з картиною <span style="font-weight:400">(необов'язково)</span></label>
+    <label class="drop" for="photo"><img id="thumb" alt=""><span id="ptxt">Додати фото: картина на стіні, в руках, момент дарування</span></label>
+    <input type="file" id="photo" accept="image/*" hidden>
+
+    <label class="check"><input type="checkbox" id="consent" checked> Можна показати мій відгук і фото на сайті Кислих пичок</label>
+
+    <div class="err" id="err" role="alert"></div>
+    <button class="btn" id="go" type="submit">Надіслати відгук</button>
+  </form>
+
+  <div class="box msg" id="done" hidden>
+    <div class="big">Дякуємо!</div>
+    <p>Художник обов'язково прочитає. Якщо дали згоду, відгук з'явиться на сайті після того, як ми його переглянемо.</p>
+    <a class="btn ghost" href="/">На головну</a>
+  </div>
+</div></main>
+<script>
+const $=id=>document.getElementById(id);
+const q=new URLSearchParams(location.search),id=q.get('id'),t=q.get('t');
+const api=window.KP_API;
+const WORDS=['','Зовсім не те','Так собі','Нормально','Добре','Неймовірно!'];
+let rating=0,photo=null;
+async function call(b){const r=await fetch(api,{method:'POST',body:JSON.stringify(b)});return r.json();}
+function fail(text){$('sub').textContent=text;}
+(async()=>{
+  if(!id||!t||!api)return fail('Посилання неповне. Відкрийте його, будь ласка, прямо з листа.');
+  try{
+    const r=await call({action:'reviewInfo',id,t});
+    if(!r.ok)return fail('Посилання не працює. Відкрийте його прямо з листа або просто відповідайте на лист, ми допоможемо.');
+    if(r.already){$('sub').textContent='Ви вже залишили відгук до цього замовлення. Дякуємо!';return;}
+    $('sub').textContent=r.who==='friend'
+      ?`Портрет для ${r.name} (${r.sizeLabel}). Розкажіть, як пройшов момент, коли дарували.`
+      :`Ваш портрет (${r.sizeLabel}). Розкажіть, як він вам.`;
+    $('f').hidden=false;
+  }catch(e){fail('Не вдалося завантажити. Перевірте інтернет і оновіть сторінку.');}
+})();
+const st=$('stars');
+for(let i=1;i<=5;i++){const b=document.createElement('button');b.type='button';b.textContent='★';b.setAttribute('role','radio');b.setAttribute('aria-label',i+' з 5');
+  b.onclick=()=>{rating=i;paint();};st.append(b);}
+function paint(){[...st.children].forEach((b,i)=>{b.classList.toggle('on',i<rating);b.setAttribute('aria-checked',i+1===rating);});$('word').textContent=WORDS[rating];}
+$('photo').onchange=async e=>{const f=e.target.files[0];if(!f)return;
+  try{photo=await pack(f);$('thumb').src='data:image/jpeg;base64,'+photo.data;$('thumb').style.display='block';$('ptxt').textContent='Фото додано. Натисніть, щоб замінити.';}
+  catch(err){$('err').textContent='Це фото не вдалося відкрити. Спробуйте інше.';}};
+async function pack(file){
+  const img=await new Promise((ok,no)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=no;im.src=URL.createObjectURL(file);});
+  const k=Math.min(1,1600/Math.max(img.naturalWidth,img.naturalHeight));
+  const c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  return{data:c.toDataURL('image/jpeg',.85).split(',')[1]};
+}
+const ERR={bad_rating:'Поставте, будь ласка, зірочки.',missing_fields:'Напишіть кілька слів і як вас підписати.',already:'Відгук до цього замовлення вже є.',photo_too_big:'Фото завелике, спробуйте інше.',bad_link:'Посилання не працює, відкрийте його з листа.'};
+$('f').onsubmit=async e=>{
+  e.preventDefault();$('err').textContent='';
+  if(!rating)return $('err').textContent=ERR.bad_rating;
+  if(!$('text').value.trim()||!$('author').value.trim())return $('err').textContent=ERR.missing_fields;
+  const btn=$('go');btn.disabled=true;btn.textContent='Надсилаємо…';
+  try{
+    const r=await call({action:'review',id,t,rating,text:$('text').value.trim(),author:$('author').value.trim(),consent:$('consent').checked,photo});
+    if(!r.ok)throw new Error(r.error);
+    $('f').hidden=true;$('sub').hidden=true;$('done').hidden=false;
+  }catch(err){$('err').textContent=ERR[err.message]||'Не вдалося надіслати. Спробуйте ще раз.';}
+  finally{btn.disabled=false;btn.textContent='Надіслати відгук';}
+};
+</script>
+</body>
+</html>

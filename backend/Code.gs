@@ -23,6 +23,10 @@ const SIZES = {
 const RUSH_PRICE = 666;
 const STATUSES = ['new', 'paid', 'painting', 'shipped', 'done', 'cancelled'];
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+const SITE = 'https://kyslipychki.shop';
+const REVIEW_SHEET = 'Відгуки';
+const REVIEW_HEAD = ['id', 'created', 'orderId', 'status', 'rating', 'author', 'text', 'consent', 'photoId', 'email', 'updated'];
+const REVIEW_STATUSES = ['pending', 'published', 'hidden'];
 
 /** Запустити один раз вручну з редактора. */
 function setup() {
@@ -45,7 +49,14 @@ function doPost(e) {
     const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
     const action = body.action || 'order';
     if (action === 'order') return json_(createOrder_(body));
+    if (action === 'reviewInfo') return json_(reviewInfo_(body));
+    if (action === 'review') return json_(createReview_(body));
+    if (action === 'reviews') return json_({ ok: true, reviews: publicReviews_() });
     auth_(body.token);
+    if (action === 'reviewsAdmin') return json_({ ok: true, reviews: allReviews_() });
+    if (action === 'reviewStatus') return json_(updateReview_(body));
+    if (action === 'reviewPhoto') return json_(getReviewPhoto_(body.id));
+    if (action === 'sendReviewRequest') return json_(sendReviewRequest_(body.id, true));
     if (action === 'list') return json_({ ok: true, orders: listOrders_() });
     if (action === 'status') return json_(updateOrder_(body));
     if (action === 'photo') return json_(getPhoto_(body.id));
@@ -126,6 +137,7 @@ function updateOrder_(b) {
       if (b.status !== undefined) {
         if (STATUSES.indexOf(b.status) < 0) throw new Error('bad_status');
         sh.getRange(i + 1, head.indexOf('status') + 1).setValue(b.status);
+        if (b.status === 'done') sendReviewRequest_(b.id, false);
       }
       if (b.note !== undefined) sh.getRange(i + 1, head.indexOf('note') + 1).setValue(clean_(b.note, 2000));
       sh.getRange(i + 1, head.indexOf('updated') + 1).setValue(new Date());
@@ -140,6 +152,165 @@ function getPhoto_(id) {
   if (!o || !o.photoId) throw new Error('not_found');
   const blob = DriveApp.getFileById(o.photoId).getBlob();
   return { ok: true, type: blob.getContentType(), data: Utilities.base64Encode(blob.getBytes()) };
+}
+
+/* ---------- відгуки ---------- */
+
+/** Підпис посилання на відгук: лише той, хто отримав лист, може залишити відгук до свого замовлення. */
+function reviewSig_(orderId) {
+  const props = PropertiesService.getScriptProperties();
+  let secret = props.getProperty('REVIEW_SECRET');
+  if (!secret) { secret = Utilities.getUuid() + Utilities.getUuid(); props.setProperty('REVIEW_SECRET', secret); }
+  const raw = Utilities.computeHmacSha256Signature(String(orderId), secret);
+  return Utilities.base64EncodeWebSafe(raw).replace(/=+$/, '').slice(0, 22);
+}
+
+function findOrder_(id) {
+  return listOrders_().filter(function (x) { return x.id === id; })[0];
+}
+
+function checkReviewLink_(b) {
+  const id = String(b.id || '');
+  if (!id || String(b.t || '') !== reviewSig_(id)) throw new Error('bad_link');
+  const o = findOrder_(id);
+  if (!o) throw new Error('bad_link');
+  return o;
+}
+
+function reviewSheet_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sh = ss.getSheetByName(REVIEW_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(REVIEW_SHEET);
+    sh.appendRow(REVIEW_HEAD);
+    sh.setFrozenRows(1);
+    sh.getRange(1, 1, 1, REVIEW_HEAD.length).setFontWeight('bold');
+  }
+  return sh;
+}
+
+function allReviews_() {
+  const values = reviewSheet_().getDataRange().getValues();
+  const head = values.shift();
+  return values.filter(function (r) { return r[0]; }).map(function (r) {
+    const o = {};
+    head.forEach(function (h, i) { o[h] = r[i] instanceof Date ? r[i].toISOString() : r[i]; });
+    return o;
+  }).reverse();
+}
+
+function reviewInfo_(b) {
+  const o = checkReviewLink_(b);
+  const done = allReviews_().some(function (r) { return r.orderId === o.id; });
+  return { ok: true, orderId: o.id, name: o.name, sizeLabel: o.sizeLabel, who: o.who, already: done };
+}
+
+function createReview_(b) {
+  const o = checkReviewLink_(b);
+  if (allReviews_().some(function (r) { return r.orderId === o.id; })) throw new Error('already');
+  const rating = Math.round(Number(b.rating));
+  if (!(rating >= 1 && rating <= 5)) throw new Error('bad_rating');
+  const text = clean_(b.text, 1500);
+  const author = clean_(b.author, 60);
+  if (!text || !author) throw new Error('missing_fields');
+  let photoId = '';
+  if (b.photo && b.photo.data) {
+    const bytes = Utilities.base64Decode(String(b.photo.data));
+    if (bytes.length > MAX_PHOTO_BYTES) throw new Error('photo_too_big');
+    photoId = folder_().createFile(Utilities.newBlob(bytes, 'image/jpeg', 'review_' + o.id + '.jpg')).getId();
+  }
+  const now = new Date();
+  const row = { id: 'R-' + o.id, created: now, orderId: o.id, status: 'pending', rating: rating, author: author,
+    text: text, consent: b.consent ? 'так' : 'ні', photoId: photoId, email: o.email, updated: now };
+  reviewSheet_().appendRow(REVIEW_HEAD.map(function (h) { return row[h]; }));
+  try {
+    MailApp.sendEmail({
+      to: Session.getEffectiveUser().getEmail(),
+      subject: 'Новий відгук ' + '★'.repeat(rating) + ' · ' + o.id,
+      body: author + ' (' + rating + '/5)' + (b.consent ? '' : ' — БЕЗ згоди на публікацію') + ':\n\n' + text +
+        '\n\nОпублікувати можна в адмінці: ' + SITE + '/admin/'
+    });
+  } catch (e) { /* не критично */ }
+  return { ok: true };
+}
+
+function publicReviews_() {
+  const cache = CacheService.getScriptCache();
+  const hit = cache.get('pub_reviews');
+  if (hit) return JSON.parse(hit);
+  const list = allReviews_().filter(function (r) { return r.status === 'published' && r.consent === 'так'; })
+    .map(function (r) {
+      return { rating: Number(r.rating), author: String(r.author).replace(/^'/, ''), text: String(r.text).replace(/^'/, ''),
+        date: String(r.created).slice(0, 10),
+        photo: r.photoId ? 'https://drive.google.com/thumbnail?id=' + r.photoId + '&sz=w800' : '' };
+    });
+  cache.put('pub_reviews', JSON.stringify(list), 300);
+  return list;
+}
+
+function updateReview_(b) {
+  if (REVIEW_STATUSES.indexOf(b.status) < 0) throw new Error('bad_status');
+  const sh = reviewSheet_();
+  const values = sh.getDataRange().getValues();
+  const head = values[0];
+  for (let i = 1; i < values.length; i++) {
+    if (values[i][0] === b.id) {
+      if (b.status === 'published' && values[i][head.indexOf('consent')] !== 'так') throw new Error('no_consent');
+      sh.getRange(i + 1, head.indexOf('status') + 1).setValue(b.status);
+      sh.getRange(i + 1, head.indexOf('updated') + 1).setValue(new Date());
+      const photoId = values[i][head.indexOf('photoId')];
+      if (photoId) {
+        try {
+          DriveApp.getFileById(photoId).setSharing(
+            b.status === 'published' ? DriveApp.Access.ANYONE_WITH_LINK : DriveApp.Access.PRIVATE, DriveApp.Permission.VIEW);
+        } catch (e) { /* фото не критичне */ }
+      }
+      CacheService.getScriptCache().remove('pub_reviews');
+      return { ok: true };
+    }
+  }
+  throw new Error('not_found');
+}
+
+function getReviewPhoto_(id) {
+  const r = allReviews_().filter(function (x) { return x.id === id; })[0];
+  if (!r || !r.photoId) throw new Error('not_found');
+  const blob = DriveApp.getFileById(r.photoId).getBlob();
+  return { ok: true, type: blob.getContentType(), data: Utilities.base64Encode(blob.getBytes()) };
+}
+
+/** Лист із проханням залишити відгук. Автоматично надсилається один раз, коли замовлення стає «Вручено». */
+function sendReviewRequest_(orderId, force) {
+  const props = PropertiesService.getScriptProperties();
+  const key = 'rv_sent_' + orderId;
+  if (!force && props.getProperty(key)) return { ok: true, skipped: true };
+  const o = findOrder_(orderId);
+  if (!o) throw new Error('not_found');
+  const link = SITE + '/vidguk/?id=' + encodeURIComponent(o.id) + '&t=' + reviewSig_(o.id);
+  const gift = o.who === 'friend';
+  const esc = function (t) { return String(t).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+  const intro = gift
+    ? 'Портрет для ' + esc(o.name) + ' вже доїхав. Як пройшов момент, коли дарували? Нам дуже цікаво, чи вдалося розсмішити.'
+    : 'Твій портрет уже вдома. Як він тобі? Вдалося посміятися?';
+  const html =
+    '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1b1d2a">' +
+    '<div style="background:#ffd23f;padding:22px 24px;border-radius:16px 16px 0 0;font-size:26px;font-weight:700">Кислі пички</div>' +
+    '<div style="border:2px solid #1b1d2a;border-top:0;border-radius:0 0 16px 16px;padding:22px 24px">' +
+    '<p style="font-size:18px;margin:0 0 14px">' + intro + '</p>' +
+    '<p style="margin:0 0 18px">Залиш, будь ласка, коротенький відгук: зірочки і пару слів. Можна додати фото з картиною. Художник читає кожен.</p>' +
+    '<p style="margin:0 0 20px"><a href="' + link + '" style="display:inline-block;background:#ff5a5f;color:#fff;text-decoration:none;font-weight:700;padding:14px 26px;border-radius:999px;border:2px solid #1b1d2a">Залишити відгук</a></p>' +
+    '<p style="margin:0;color:#6a6c7c;font-size:13px">Займе хвилину. Відгук з’явиться на сайті лише з твоєї згоди.</p>' +
+    '</div></div>';
+  MailApp.sendEmail({
+    to: o.email,
+    subject: gift ? 'Як пройшов момент із портретом?' : 'Як тобі твій портрет?',
+    name: 'Кислі пички',
+    replyTo: Session.getEffectiveUser().getEmail(),
+    htmlBody: html,
+    body: intro.replace(/<[^>]+>/g, '') + '\n\nЗалишити відгук: ' + link
+  });
+  props.setProperty(key, new Date().toISOString());
+  return { ok: true, link: link };
 }
 
 /* ---------- допоміжне ---------- */
