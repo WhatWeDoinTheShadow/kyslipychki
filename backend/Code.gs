@@ -290,24 +290,26 @@ function sendReviewRequest_(orderId, force) {
   const gift = o.who === 'friend';
   const esc = function (t) { return String(t).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
   const intro = gift
-    ? 'Портрет для ' + esc(o.name) + ' вже доїхав. Як пройшов момент, коли дарували? Нам дуже цікаво, чи вдалося розсмішити.'
-    : 'Твій портрет уже вдома. Як він тобі? Вдалося посміятися?';
-  const html =
-    '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1b1d2a">' +
-    '<div style="background:#ffd23f;padding:22px 24px;border-radius:16px 16px 0 0;font-size:26px;font-weight:700">Кислі пички</div>' +
-    '<div style="border:2px solid #1b1d2a;border-top:0;border-radius:0 0 16px 16px;padding:22px 24px">' +
-    '<p style="font-size:18px;margin:0 0 14px">' + intro + '</p>' +
-    '<p style="margin:0 0 18px">Залиш, будь ласка, коротенький відгук: зірочки і пару слів. Можна додати фото з картиною. Художник читає кожен.</p>' +
-    '<p style="margin:0 0 20px"><a href="' + link + '" style="display:inline-block;background:#ff5a5f;color:#fff;text-decoration:none;font-weight:700;padding:14px 26px;border-radius:999px;border:2px solid #1b1d2a">Залишити відгук</a></p>' +
-    '<p style="margin:0;color:#6a6c7c;font-size:13px">Займе хвилину. Відгук з’явиться на сайті лише з твоєї згоди.</p>' +
-    '</div></div>';
+    ? 'Портрет для ' + o.name + ' уже доїхав. Як пройшов момент, коли дарували? Нам дуже цікаво, чи вдалося розсмішити.'
+    : 'Ваш портрет уже вдома. Як він вам? Вдалося посміятися?';
+  const text = 'Привіт!\n\n' + intro + '\n\n' +
+    'Якщо маєте хвилинку, залиште, будь ласка, короткий відгук: зірочки і пару слів. Художник читає кожен.\n' +
+    link + '\n\n' +
+    'Або просто відповідайте на цей лист, ми теж прочитаємо.\n\n' +
+    'Кислі пички\nЗамовлення ' + o.id;
+  const html = '<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.55;color:#1b1d2a;max-width:560px">' +
+    '<p>Привіт!</p><p>' + esc(intro) + '</p>' +
+    '<p>Якщо маєте хвилинку, залиште, будь ласка, короткий відгук: зірочки і пару слів. Художник читає кожен.<br>' +
+    '<a href="' + link + '">Залишити відгук про портрет</a></p>' +
+    '<p>Або просто відповідайте на цей лист, ми теж прочитаємо.</p>' +
+    '<p>Кислі пички<br><span style="color:#6a6c7c">Замовлення ' + esc(o.id) + '</span></p></div>';
   MailApp.sendEmail({
     to: o.email,
-    subject: gift ? 'Як пройшов момент із портретом?' : 'Як тобі твій портрет?',
+    subject: 'Замовлення ' + o.id + ': як вам портрет?',
     name: 'Кислі пички',
     replyTo: Session.getEffectiveUser().getEmail(),
     htmlBody: html,
-    body: intro.replace(/<[^>]+>/g, '') + '\n\nЗалишити відгук: ' + link
+    body: text
   });
   props.setProperty(key, new Date().toISOString());
   return { ok: true, link: link };

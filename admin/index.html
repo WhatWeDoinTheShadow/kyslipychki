@@ -118,7 +118,16 @@ const $=s=>document.querySelector(s);
 const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>(+n||0).toLocaleString('uk-UA')+' ₴';
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
-let token=ls.get('kp_token'),orders=[],filter='all',q='',sel=null,photos={},busy=false,view='orders',reviews=[];
+/* «Запам'ятати мене»: пароль лежить і в localStorage, і в cookie на рік, бо iPhone та вбудовані браузери інколи чистять одне з них */
+const keep={
+  get(){return ls.get('kp_token')||(document.cookie.match(/(?:^|; )kp_token=([^;]+)/)||[])[1]&&decodeURIComponent(document.cookie.match(/(?:^|; )kp_token=([^;]+)/)[1])||(()=>{try{return sessionStorage.getItem('kp_token')}catch(e){return null}})();},
+  set(v,remember){
+    try{sessionStorage.setItem('kp_token',v)}catch(e){}
+    if(remember){ls.set('kp_token',v);document.cookie='kp_token='+encodeURIComponent(v)+';max-age=31536000;path=/admin;SameSite=Strict;Secure';try{navigator.storage?.persist?.()}catch(e){}}
+  },
+  clear(){ls.set('kp_token',null);document.cookie='kp_token=;max-age=0;path=/admin';try{sessionStorage.removeItem('kp_token')}catch(e){}}
+};
+let token=keep.get(),orders=[],filter='all',q='',sel=null,photos={},busy=false,view='orders',reviews=[];
 const RS={pending:'Новий',published:'На сайті',hidden:'Сховано'};
 
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2200);}
@@ -141,11 +150,12 @@ function source(o){
 function login(msg=''){
   $('#app').innerHTML=`<div class="login"><form id="lf"><h1>Кислі пички</h1><p style="margin:0">Адмінка замовлень. Введи пароль, який видав бекенд.</p>
   <input id="pw" type="password" autocomplete="current-password" placeholder="Пароль" aria-label="Пароль">
+  <label style="display:flex;gap:10px;align-items:center;font-weight:700;cursor:pointer"><input id="rm" type="checkbox" checked style="width:22px;height:22px;accent-color:#ff5a5f"> Запам'ятати мене на цьому пристрої</label>
   <p class="err" id="le">${esc(msg)}</p><button class="btn" type="submit">Увійти</button></form></div>`;
   $('#lf').addEventListener('submit',async e=>{
     e.preventDefault();token=$('#pw').value.trim();if(!token)return;
     $('#le').textContent='Перевіряю…';
-    try{const o=await call({action:'list'});orders=o.orders;ls.set('kp_token',token);shell();}
+    try{const o=await call({action:'list'});orders=o.orders;keep.set(token,$('#rm').checked);shell();}
     catch(err){token=null;$('#le').textContent=err.message==='unauthorized'?'Неправильний пароль.':err.message==='no_api'?'Бекенд ще не підключено (config.js).':'Немає зв\'язку з бекендом.';}
   });
 }
@@ -161,7 +171,7 @@ function shell(){
   <div class="grid"><div class="list" id="list"></div><section class="detail" id="detail" hidden></section></div></main>`;
   $('#rf').onclick=()=>load(true);
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{view=b.dataset.v;document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===view));$('#rvmain').hidden=view!=='reviews';$('#ormain').hidden=view!=='orders';if(view==='reviews')loadReviews();});
-  $('#lo').onclick=()=>{ls.set('kp_token',null);token=null;login();};
+  $('#lo').onclick=()=>{keep.clear();token=null;login();};
   $('#q').oninput=e=>{q=e.target.value.toLowerCase();renderList();};
   renderAll();
 }
@@ -250,7 +260,7 @@ async function load(manual){
   if(view==='reviews')loadReviews();
   try{const o=await call({action:'list'});const was=orders.filter(x=>x.status==='new').length;orders=o.orders;renderAll();
     const now=orders.filter(x=>x.status==='new').length;if(!manual&&now>was)toast('Нове замовлення!');else if(manual)toast('Оновлено');}
-  catch(e){if(e.message==='unauthorized'){ls.set('kp_token',null);token=null;login('Пароль змінився, увійди знову.');}else if(manual)toast('Немає зв\'язку');}
+  catch(e){if(e.message==='unauthorized'){keep.clear();token=null;login('Пароль змінився, увійди знову.');}else if(manual)toast('Немає зв\'язку');}
   finally{busy=false;$('#rf')?.classList.remove('spin');}
 }
 setInterval(()=>{if(document.visibilityState==='visible')load(false);},60000);
