@@ -426,7 +426,6 @@ footer .flinks a,footer .flinks span a{color:inherit}
           <label class="check"><input type="checkbox" id="rush"> Терміново, за 48 годин <svg class="devil" viewBox="0 0 48 48" aria-label="стікер"><g stroke="#1b1d2a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"><path d="M10 16 6 4l12 7M38 16l4-12-12 7" fill="#fff"/><circle cx="24" cy="27" r="18" fill="#fff"/><path d="M12 15 9 7l8 5M36 15l3-8-8 5" fill="#ff5a5f"/><circle cx="24" cy="27" r="14" fill="#ff5a5f"/><path d="M16 22l6 3M32 22l-6 3" fill="none"/><circle cx="19" cy="27" r="1.8" fill="#1b1d2a" stroke="none"/><circle cx="29" cy="27" r="1.8" fill="#1b1d2a" stroke="none"/><path d="M17 32q7 6 14 0" fill="none"/><path d="M21 34l1 3 2-2.5" fill="#fff" stroke-width="1.5"/></g></svg> <span class="price">+666 ₴</span></label>
         </fieldset>
 
-        <label class="check"><input type="checkbox" id="ok"> <span id="okText">Людина на фото не буде проти, або я спершу покажу портрет сам і вирішу, чи дарувати.</span></label>
         <p class="err" id="err" role="alert"></p>
         <button class="btn" type="submit">Замовити портрет</button>
       </form>
@@ -594,7 +593,6 @@ function render(){
   const who=val('who'),st=S.find(s=>s.id==val('style'));
   const gift=who=='friend';
   $('nameL').textContent=gift?'Як звати друга':'Як тебе звати';
-  $('okText').textContent=gift?'Людина на фото не буде проти, або я спершу покажу портрет сам і вирішу, чи дарувати.':'Це моє фото, і я хочу, щоб його намалювали.';
   const rows=[['Для кого',gift?'Для друга, у подарунок':'Для себе'],['Полотно',st.n+' '+st.sz,st.p],['Техніка',val('tech')]];
   if($('rush').checked)rows.push(['Терміново, 48 год','',666]);
   rows.push(['Фото',photoName||'ще не додано'],['Доставка','Нова пошта, за тарифом']);
@@ -647,7 +645,6 @@ f.addEventListener('submit',async e=>{
   if(!/^\S+@\S+\.\S+$/.test($('contact').value.trim()))miss.push('email');
   if(!$('city').value.trim())miss.push('відділення НП');
   if($('phone').value.replace(/\D/g,'').length<10)miss.push('телефон');
-  if(!$('ok').checked)miss.push('згоду внизу');
   if(miss.length){$('err').textContent='Додай, будь ласка: '+miss.join(', ')+'.';return;}
   const api=window.KP_API;
   if(!api){$('err').textContent='Прийом замовлень ще налаштовується. Спробуй трохи пізніше.';return;}
