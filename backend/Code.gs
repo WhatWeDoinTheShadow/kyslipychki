@@ -364,6 +364,24 @@ function notify_(o) {
   } catch (e) { /* лист не критичний */ }
 }
 
+/** Блок «Зніми момент, коли даруєш» для листа-підтвердження подарункових замовлень. */
+const MOMENT_STEPS = [
+  ['Увімкни запис заздалегідь', 'Постав телефон на полицю або попроси когось знімати. Реакція триває кілька секунд, її легко проґавити.'],
+  ['Спершу сумне фото, потім картина', 'Нагадай, яким було те селфі, а тоді розгорни полотно. Найщиріший сміх буває саме на контрасті.'],
+  ['Покажи відео пізніше', 'За день чи тиждень, коли знову накриє. Людина побачить себе усміхненою, і це працює краще за будь-які поради.'],
+  ['Не наполягай', 'Якщо людина не хоче зніматися, просто будь поруч. Момент важливіший за кадр.']
+];
+const MOMENT_INTRO = 'Найцінніше в цьому подарунку не сама картина, а секунда, коли людина вперше за довгий час сміється. Зафіксуй її на відео чи фото. Це доказ, якого їй так бракувало: я ще вмію сміятися.';
+const MOMENT_HTML =
+  '<div style="background:#fff6d6;border-radius:12px;padding:16px 18px;margin:18px 0 16px">' +
+  '<div style="font-size:20px;font-weight:700;margin:0 0 8px">Зніми момент, коли даруєш</div>' +
+  '<p style="margin:0 0 12px">' + MOMENT_INTRO + '</p>' +
+  '<ol style="margin:0;padding-left:20px">' + MOMENT_STEPS.map(function (x) {
+    return '<li style="margin:0 0 8px"><b>' + x[0] + '.</b> ' + x[1] + '</li>';
+  }).join('') + '</ol></div>';
+const MOMENT_TEXT = 'ЗНІМИ МОМЕНТ, КОЛИ ДАРУЄШ\n' + MOMENT_INTRO + '\n\n' +
+  MOMENT_STEPS.map(function (x, i) { return (i + 1) + '. ' + x[0] + '. ' + x[1]; }).join('\n');
+
 /** Лист-підтвердження замовнику. */
 function confirm_(o) {
   try {
@@ -388,6 +406,7 @@ function confirm_(o) {
       '<p style="font-size:18px;margin:0 0 14px">Дякуємо! Замовлення прийнято, художник уже готує фарби.</p>' +
       '<table style="border-collapse:collapse;font-size:15px;margin:0 0 16px">' + rows + '</table>' +
       '<p style="margin:0 0 10px">Ми напишемо тобі найближчим часом, щоб узгодити оплату й деталі. Якщо щось хочеш уточнити, просто відповідай на цей лист.</p>' +
+      (gift ? MOMENT_HTML : '') +
       '<p style="margin:0;color:#6a6c7c;font-size:13px">Сум не лікуємо. Трошки сміємося разом з ним.</p>' +
       '</div></div>';
     MailApp.sendEmail({
@@ -396,7 +415,7 @@ function confirm_(o) {
       name: 'Кислі пички',
       replyTo: Session.getEffectiveUser().getEmail(),
       htmlBody: html,
-      body: lines.map(function (l) { return l[0] + ': ' + l[1]; }).join('\n') + '\n\nМи напишемо найближчим часом, щоб узгодити оплату.'
+      body: lines.map(function (l) { return l[0] + ': ' + l[1]; }).join('\n') + '\n\nМи напишемо найближчим часом, щоб узгодити оплату.' + (gift ? '\n\n' + MOMENT_TEXT : '')
     });
   } catch (e) { /* лист не критичний */ }
 }
