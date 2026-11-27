@@ -12,13 +12,20 @@ PRICES = [("Квадрат", "20×20 см", 1700), ("Портрет", "30×40 с
 GA = """<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-NXWSKHWM"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>"""
 
-NAV = """<nav>
+MENU = [("/", "Головна"), ("/#how", "Як це працює"), ("/#prices", "Ціни"), ("/portret-po-foto/", "Портрет по фото"),
+        ("/sharzh-po-foto/", "Шарж по фото"), ("/blog/", "Блог"), ("/#faq", "Питання")]
+MENU_LINKS = "".join(f'<a href="{u}">{t}</a>' for u, t in MENU)
+NAV = f"""<nav aria-label="Головне меню">
   <a class="logo" href="/" aria-label="Кислі пички, на головну"><img src="/logo-white.svg" alt="Кислі пички" width="160" height="48"></a>
   <a class="l" href="/portret-po-foto/">Портрет по фото</a>
   <a class="l" href="/sharzh-po-foto/">Шарж по фото</a>
   <a class="l" href="/blog/">Блог</a>
   <a class="btn" href="/#order">Замовити</a>
-</nav>"""
+  <button class="burger" type="button" aria-label="Меню" aria-expanded="false" aria-controls="menu"><span></span></button>
+  <div class="menu" id="menu">{MENU_LINKS}</div>
+</nav>
+<script>(()=>{{const b=document.querySelector('.burger'),m=document.getElementById('menu');b.onclick=()=>{{const on=m.classList.toggle('on');b.setAttribute('aria-expanded',on);}};m.onclick=e=>{{if(e.target.tagName==='A'){{m.classList.remove('on');b.setAttribute('aria-expanded',false);}}}};}})();</script>"""
+NAV_LD = {"@type": "SiteNavigationElement", "name": [t for _, t in MENU], "url": [SITE + u for u, _ in MENU]}
 
 FOOTER = """<footer class="band">
   <div>
@@ -78,13 +85,20 @@ def crumbs_html(items):
 
 def offer_ld(name, desc, url):
     return {"@type": "Product", "name": name, "description": desc, "url": SITE + url,
-            "image": SITE + "/after.jpg", "brand": {"@type": "Brand", "name": "Кислі пички"},
+            "image": [SITE + WIDE.get(url, "/og.jpg"), SITE + "/after.jpg"], "brand": {"@type": "Brand", "name": "Кислі пички"},
             "offers": {"@type": "AggregateOffer", "priceCurrency": "UAH", "lowPrice": 1700, "highPrice": 4111,
                        "offerCount": 3, "availability": "https://schema.org/InStock"}}
 
 
-def page(path, title, desc, body, graph, og_type="website", image="/og.jpg"):
+def page(path, title, desc, body, graph, og_type="website", image=None):
     url = SITE + path
+    image = image or WIDE.get(path, "/og.jpg")
+    graph = graph + [{"@type": "WebPage", "@id": url, "url": url, "name": title, "inLanguage": "uk",
+                      "primaryImageOfPage": {"@type": "ImageObject", "url": SITE + image, "width": 1200, "height": 630},
+                      "isPartOf": {"@type": "WebSite", "url": SITE + "/", "name": "Кислі пички"}}, NAV_LD]
+    if path in COVERS or path == "/blog/":
+        graph.append(cards_ld(more_items(path) if path != "/blog/" else [c for c in CARDS if c[0].startswith("/blog/")],
+                              "Читати далі" if path != "/blog/" else "Статті блогу"))
     org = {"@type": "Organization", "@id": SITE + "/#org", "name": "Кислі пички", "url": SITE + "/",
            "logo": SITE + "/logo.svg", "email": "kyslipychki@gmail.com"}
     ld = json.dumps({"@context": "https://schema.org", "@graph": [org] + graph}, ensure_ascii=False)
@@ -128,7 +142,48 @@ def page(path, title, desc, body, graph, og_type="website", image="/og.jpg"):
     return path
 
 
+COVERS = {
+    "/": ("/assets/covers/home.jpg", "Сумне фото, портрет фарбами і сміх людини, якій його подарували"),
+    "/portret-po-foto/": ("/assets/covers/portret.jpg", "Портрет по фото фарбами на полотні"),
+    "/sharzh-po-foto/": ("/assets/covers/sharzh.jpg", "Шарж пастеллю: дівчина та її гора депресії"),
+    "/blog/shcho-podaruvaty-druhu-yakomu-vazhko/": ("/assets/covers/podaruvaty.jpg", "Людина сміється, побачивши подарований портрет"),
+    "/blog/druk-chy-zhyvopys-portret-z-foto/": ("/assets/covers/druk.jpg", "Рука художника на тлі портрета фарбами"),
+}
+WIDE = {k: v[0].replace(".jpg", "-wide.jpg") for k, v in COVERS.items() if k != "/"}
+WIDE["/"] = "/og.jpg"
+CARDS = [("/", "Сумна фотка = смішний портрет", "Як ми перетворюємо сумне фото на теплу смішну картину фарбами."),
+         ("/portret-po-foto/", "Портрет по фото на замовлення", "Живопис фарбами на полотні, від 1700 ₴, доставка по Україні."),
+         ("/sharzh-po-foto/", "Шарж по фото на полотні", "Добрий шарж, де смішні обставини, а не зовнішність."),
+         ("/blog/shcho-podaruvaty-druhu-yakomu-vazhko/", "Що подарувати другу, якому зараз важко", "9 ідей без тиску і як подарувати делікатно."),
+         ("/blog/druk-chy-zhyvopys-portret-z-foto/", "Друк на полотні чи живопис", "У чому різниця і як не купити друк під виглядом картини.")]
+
+
+def card(u, t, d):
+    img, alt = COVERS[u]
+    return (f'<a class="pcard" href="{u}"><img src="{img}" alt="{alt}" width="600" height="450" loading="lazy">'
+            f'<span class="pc-t">{t}</span><span class="pc-d">{d}</span></a>')
+
+
+def cards_ld(items, name):
+    return {"@type": "ItemList", "name": name, "itemListElement": [
+        {"@type": "ListItem", "position": i + 1, "url": SITE + u, "name": t, "image": SITE + COVERS[u][0]}
+        for i, (u, t, d) in enumerate(items)]}
+
+
+def more_items(exclude):
+    return [c for c in CARDS if c[0] != exclude]
+
+
 def more_links(exclude):
+    return ('<section class="band more"><div class="wrap"><h2>Читати далі</h2><div class="pcards">'
+            + "".join(card(*c) for c in more_items(exclude)) + '</div></div></section>')
+
+
+def hero_cover(u):
+    return (f'<figure class="cover"><img src="{WIDE[u]}" alt="{COVERS[u][1]}" width="1200" height="630" fetchpriority="high"></figure>')
+
+
+def old_more_links(exclude):
     links = [("/portret-po-foto/", "Портрет по фото на замовлення"),
              ("/sharzh-po-foto/", "Шарж по фото на полотні"),
              ("/blog/shcho-podaruvaty-druhu-yakomu-vazhko/", "Що подарувати другу, якому зараз важко"),
@@ -147,13 +202,12 @@ faq1 = [
     ("Це друк чи справді малюють?", "Справді малюють. Художник пише портрет фарбами на полотні, вручну, без друку, планшета і нейромереж. На картині видно мазки й фактуру фарби."),
     ("Яке фото потрібне для портрета?", "Підійде звичайне фото з телефона, де видно обличчя й емоцію: селфі, кадр із відеодзвінка, фото з-під ковдри. Ідеальна якість не потрібна."),
     ("Скільки часу малюють портрет?", "Зазвичай 3–5 днів, термінове замовлення за 48 годин. Доставка Новою поштою додає 1–3 дні."),
-    ("Олія, акрил чи пастель: що обрати?", "Олія дає глибокі кольори і класичну фактуру, акрил яскравий і швидко сохне, пастель м'яка й тепла. Якщо не знаєш, обери «на вибір художника»."),
 ]
 body = f"""<header class="hero band"><div class="wrap grid">
   <div>
     {crumbs_html([("Головна", "/"), ("Портрет по фото", P)])}
     <h1>Портрет по фото на замовлення: фарбами на полотні</h1>
-    <p class="lead">Надсилаєш фото, художник малює портрет олією, акрилом або пастеллю на справжньому полотні з підрамником. Руками, а не принтером. Від 1700 ₴, доставка по Україні Новою поштою.</p>
+    <p class="lead">Надсилаєш фото, художник малює портрет фарбами на справжньому полотні з підрамником. Руками, а не принтером. Від 1700 ₴, доставка по Україні Новою поштою.</p>
     <div class="ctas"><a class="btn" href="{ORDER}">Замовити портрет</a><a class="btn ghost" href="#prices">Ціни</a></div>
   </div>
   <figure><img src="/after.jpg" alt="Портрет по фото, намальований фарбами на полотні" width="900" height="1261"><figcaption>намальовано руками</figcaption></figure>
@@ -161,16 +215,7 @@ body = f"""<header class="hero band"><div class="wrap grid">
 <main class="band"><article class="narrow">
   <h2>Чим наш портрет відрізняється від «картини з фото»</h2>
   <p>Більшість пропозицій «портрет з фото на полотні» насправді друк: фото обробляють у редакторі й друкують на тканині. Ми робимо інакше. Художник дивиться на твоє фото і пише картину з нуля, мазок за мазком. Тому кожен портрет єдиний у своєму роді, а на полотні видно живу фактуру фарби. Детальніше про різницю пишемо в статті <a href="/blog/druk-chy-zhyvopys-portret-z-foto/">«Друк на полотні чи живопис»</a>.</p>
-  <p>І ще одна відмінність: ми малюємо не парадні портрети, а теплі й трохи смішні. Сумна фотка стає картиною, на якій смішними є обставини: власна дощова хмаринка, гора посуду, кіт, що сидить на голові. Над зовнішністю не жартуємо ніколи.</p>
-
-  <h2>Техніки: олія, акрил, пастель</h2>
-  <div class="scroll"><table class="tbl">
-    <tr><th>Техніка</th><th>Який вигляд</th><th>Кому підійде</th></tr>
-    <tr><td><b>Олія</b></td><td>Глибокі кольори, класична фактура мазків</td><td>Хто хоче «справжню картину», яка висітиме роками</td></tr>
-    <tr><td><b>Акрил</b></td><td>Яскраво, чисто, сучасно</td><td>Для смішних, соковитих сюжетів</td></tr>
-    <tr><td><b>Пастель</b></td><td>М'яко, тепло, ніби трохи пухнасто</td><td>Для ніжного, затишного настрою</td></tr>
-    <tr><td><b>На вибір художника</b></td><td>Художник обере техніку під фото й настрій</td><td>Якщо сумніваєшся</td></tr>
-  </table></div>
+  <p>І ще одна відмінність: ми малюємо не парадні портрети, а теплі й трохи смішні. Як саме це працює, показуємо на головній: <a href="/">сумна фотка перетворюється на смішний портрет з фото на полотні</a>. Сумна фотка стає картиною, на якій смішними є обставини: власна дощова хмаринка, гора посуду, кіт, що сидить на голові. Над зовнішністю не жартуємо ніколи.</p>
 
   <h2 id="prices">Ціни на портрет по фото</h2>
   {price_cards()}
@@ -188,14 +233,15 @@ body = f"""<header class="hero band"><div class="wrap grid">
   <p>Будь-яке, на якому видно обличчя й настрій. Не треба студійної зйомки: селфі в маршрутці, кадр із відеодзвінка, фото з-під ковдри підходять навіть краще, бо в них є емоція. Якщо фото дуже темне чи розмите, ми напишемо і попросимо інше.</p>
 
   <h2>Портрет у подарунок</h2>
+  <p>Хочеш більше гумору? Подивись <a href="/sharzh-po-foto/">шарж по фото</a>: там смішніші сюжети навколо людини.</p>
   <p>Найчастіше портрет замовляють як подарунок другу, якому зараз важко. Картина приходить тобі, а не людині на фото, тож ти сам вирішуєш, коли і як її подарувати. Ідеї, як зробити це делікатно, зібрали в статті <a href="/blog/shcho-podaruvaty-druhu-yakomu-vazhko/">«Що подарувати другу, якому зараз важко»</a>.</p>
 
   <h2>Питання про портрет по фото</h2>
   {faq_html(faq1)}
 </article></main>
 {more_links(P)}"""
-pages.append(page(P, "Портрет по фото на замовлення: олія, акрил, пастель — Кислі пички",
-    "Портрет по фото фарбами на полотні: олія, акрил або пастель, малює художник руками. Від 1700 ₴, 3–5 днів, доставка Новою поштою по Україні.",
+pages.append(page(P, "Портрет по фото на замовлення фарбами на полотні — Кислі пички",
+    "Портрет по фото, намальований художником руками фарбами на полотні, а не друк. Від 1700 ₴, 3–5 днів, доставка Новою поштою по Україні.",
     body, [offer_ld("Портрет по фото на полотні", "Портрет по фото, намальований художником фарбами на полотні", P), faq_ld(faq1),
            crumbs_ld([("Головна", "/"), ("Портрет по фото", P)])]))
 
@@ -220,7 +266,7 @@ body = f"""<header class="hero band"><div class="wrap grid">
 <main class="band"><article class="narrow">
   <h2>Шарж, над яким сміються разом</h2>
   <p>Звичайний шарж збільшує ніс і вуха. Наш шарж збільшує обставини. Якщо в людини тиждень, як осіння злива, на картині над нею буде власна маленька хмаринка. Якщо вона тоне в дедлайнах, то сидітиме на горі паперів із чашкою кави. Людина лишається собою і гарною, смішною стає ситуація.</p>
-  <p>Тому такий шарж можна подарувати навіть тому, кому зараз невесело. Він не каже «збадьорся», він каже «я бачу, як тобі, і я поруч».</p>
+  <p>Тому такий шарж можна подарувати навіть тому, кому зараз невесело. Приклади «було / стало» є на <a href="/">головній сторінці Кислих пичок</a>. Він не каже «збадьорся», він каже «я бачу, як тобі, і я поруч».</p>
 
   <h2 id="how">Як ми малюємо шарж по фото</h2>
   <ol>
@@ -259,6 +305,7 @@ body = f"""<main class="band"><article class="narrow">
   {crumbs_html([("Головна", "/"), ("Блог", "/blog/"), ("Що подарувати другу, якому важко", B1)])}
   <h1>{t1}</h1>
   <p class="meta">26 листопада 2026 · 6 хвилин читання</p>
+  {hero_cover(B1)}
   <p>Коли другу погано, хочеться щось зробити, але незрозуміло що. Слова звучать фальшиво, порада «тримайся» не допомагає, а великий жест може налякати. Подарунок тут працює як записка без слів: «я про тебе думаю, нічого від тебе не чекаю». Головне, щоб він не вимагав від людини сил, яких у неї зараз немає.</p>
   <p>Ми не психологи. Ця добірка про турботу, а не про лікування. Депресія лікується у фахівців, а подарунок лише нагадує людині, що вона не сама.</p>
 
@@ -278,7 +325,7 @@ body = f"""<main class="band"><article class="narrow">
   <h3>7. Аудіокнига чи подкаст замість паперової книжки</h3>
   <p>Читати складно, коли важко зосередитися. Слухати можна лежачи, і для цього не треба сил.</p>
   <h3>8. Картина, яка змушує усміхнутися</h3>
-  <p>Ми самі робимо такі подарунки, тож скажемо чесно, навіщо вони. Сумне фото друга художник перетворює на <a href="/sharzh-po-foto/">добрий шарж фарбами на полотні</a>: смішними стають обставини, а не людина. Картина лишається на стіні й тихо нагадує, що хтось бачить, як тобі, і сміється разом з тобою, а не з тебе.</p>
+  <p>Ми самі робимо такі подарунки, тож скажемо чесно, навіщо вони. Сумне фото друга художник перетворює на <a href="/sharzh-po-foto/">добрий шарж фарбами на полотні</a>: смішними стають обставини, а не людина. Картина лишається на стіні й тихо нагадує, що хтось бачить, як тобі, і сміється разом з тобою, а не з тебе. Як це виглядає, <a href="/">показуємо на головній</a>.</p>
   <h3>9. Оплачена консультація фахівця, але лише за згодою</h3>
   <p>Якщо друг сам говорив, що хоче піти до психолога, але відкладає через гроші, допомога з оплатою може бути найціннішим подарунком. Не дарувати сюрпризом і не наполягати.</p>
 
@@ -303,7 +350,7 @@ body = f"""<main class="band"><article class="narrow">
 {more_links(B1)}"""
 pages.append(page(B1, t1 + " — Кислі пички", d1, body, [
     {"@type": "BlogPosting", "headline": t1, "description": d1, "datePublished": TODAY, "dateModified": TODAY,
-     "inLanguage": "uk", "mainEntityOfPage": SITE + B1, "image": SITE + "/og.jpg",
+     "inLanguage": "uk", "mainEntityOfPage": SITE + B1, "image": SITE + WIDE[B1],
      "author": {"@type": "Organization", "name": "Кислі пички", "url": SITE + "/"},
      "publisher": {"@id": SITE + "/#org"}},
     crumbs_ld([("Головна", "/"), ("Блог", "/blog/"), ("Що подарувати другу, якому важко", B1)])], og_type="article"))
@@ -316,6 +363,7 @@ body = f"""<main class="band"><article class="narrow">
   {crumbs_html([("Головна", "/"), ("Блог", "/blog/"), ("Друк чи живопис", B2)])}
   <h1>{t2}</h1>
   <p class="meta">26 листопада 2026 · 5 хвилин читання</p>
+  {hero_cover(B2)}
   <p>Шукаєш «картину з фото на полотні» і бачиш сотні пропозицій із дуже різними цінами: від кількох сотень гривень до кількох тисяч. Здебільшого причина не в жадібності художників, а в тому, що під однією назвою продають два різні продукти: <b>друк</b> і <b>живопис</b>.</p>
 
   <h2>Коротко: чим вони відрізняються</h2>
@@ -333,7 +381,7 @@ body = f"""<main class="band"><article class="narrow">
   <p>Друк чесний і корисний, коли потрібна саме фотографія у великому форматі: весільне фото на стіну, пейзаж із подорожі, сімейний знімок для бабусі. Швидко, недорого, точно як на фото.</p>
 
   <h2>Коли обрати живопис</h2>
-  <p>Живопис потрібен, коли важлива не точна копія, а погляд художника: щось додати, перебільшити, пожартувати, передати настрій. Такий портрет сприймають як мистецтво і подарунок «на роки», а не як фото в рамці. Саме так ми працюємо в Кислих пичках: <a href="/portret-po-foto/">портрет по фото</a> або <a href="/sharzh-po-foto/">шарж по фото</a> малюють руками фарбами на полотні.</p>
+  <p>Живопис потрібен, коли важлива не точна копія, а погляд художника: щось додати, перебільшити, пожартувати, передати настрій. Такий портрет сприймають як мистецтво і подарунок «на роки», а не як фото в рамці. Саме так ми працюємо в <a href="/">Кислих пичках</a>: <a href="/portret-po-foto/">портрет по фото</a> або <a href="/sharzh-po-foto/">шарж по фото</a> малюють руками фарбами на полотні.</p>
 
   <h2>Як не купити друк під виглядом картини</h2>
   <ul>
@@ -349,7 +397,7 @@ body = f"""<main class="band"><article class="narrow">
 {more_links(B2)}"""
 pages.append(page(B2, "Друк на полотні чи портрет фарбами: у чому різниця — Кислі пички", d2, body, [
     {"@type": "BlogPosting", "headline": t2, "description": d2, "datePublished": TODAY, "dateModified": TODAY,
-     "inLanguage": "uk", "mainEntityOfPage": SITE + B2, "image": SITE + "/after.jpg",
+     "inLanguage": "uk", "mainEntityOfPage": SITE + B2, "image": SITE + WIDE[B2],
      "author": {"@type": "Organization", "name": "Кислі пички", "url": SITE + "/"},
      "publisher": {"@id": SITE + "/#org"}},
     crumbs_ld([("Головна", "/"), ("Блог", "/blog/"), ("Друк чи живопис", B2)])], og_type="article"))
@@ -357,7 +405,7 @@ pages.append(page(B2, "Друк на полотні чи портрет фарб
 # ---------- 5. Блог: список ----------
 BL = "/blog/"
 posts = [(B1, t1, d1), (B2, t2, d2)]
-cards = "".join(f'<a class="post" href="{u}"><h2>{t}</h2><p>{d}</p></a>' for u, t, d in posts)
+cards = "".join(f'<a class="post" href="{u}"><img src="{COVERS[u][0]}" alt="{COVERS[u][1]}" width="600" height="450" loading="lazy"><h2>{t}</h2><p>{d}</p></a>' for u, t, d in posts)
 body = f"""<main class="band"><div class="wrap">
   {crumbs_html([("Головна", "/"), ("Блог", BL)])}
   <h1>Блог Кислих пичок</h1>

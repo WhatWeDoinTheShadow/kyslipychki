@@ -33,6 +33,7 @@
 - Google Analytics: акаунт «Кислі пички» (417540232), ресурс kyslipychki.shop (565965256), тег GTM-NXWSKHWM; подія generate_lead при замовленні.
 - Search Console: власність підтверджена файлом google0b2f771689c4d729.html (не видаляти), sitemap.xml надіслано.
 - Сторінки: головна, /portret-po-foto/, /sharzh-po-foto/, /blog/, /blog/shcho-podaruvaty-druhu-yakomu-vazhko/, /blog/druk-chy-zhyvopys-portret-z-foto/.
+- Обкладинки сторінок: assets/covers/*.jpg (600×450 для карток) і *-wide.jpg (1200×630 для статей і OG). Мобільне бургер-меню є і на головній, і в шаблоні скрипта.
 - Внутрішні сторінки, блог і sitemap.xml генерує `tools/build_pages.py` (запуск з кореня репо: `python3 tools/build_pages.py .`), стиль `assets/page.css`. Тексти сторінок правимо в цьому скрипті, а не в згенерованих HTML.
 - Розмітка: Organization, WebSite, Product (AggregateOffer), FAQPage, BreadcrumbList, BlogPosting.
 
