@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Залишити відгук — Кислі пички</title>
+<title>Review — Кислі пички · Sour Mugs · Mines Boudeuses</title>
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#ffd23f">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
@@ -38,64 +38,96 @@ textarea{min-height:140px;resize:vertical}
   <a class="logo" href="/" aria-label="Кислі пички, на головну"><img src="/logo-white.svg" alt="Кислі пички" width="160" height="48"></a>
 </nav>
 <main class="band"><div class="narrow">
-  <h1>Як вам портрет?</h1>
-  <p id="sub">Хвилинку, перевіряємо посилання…</p>
+  <h1 data-t="h1">Як вам портрет?</h1>
+  <p id="sub">…</p>
 
   <form class="box" id="f" hidden novalidate>
-    <b>Оцінка</b>
+    <b data-t="rate">Оцінка</b>
     <div class="stars" id="stars" role="radiogroup" aria-label="Оцінка від 1 до 5"></div>
     <div class="rate-word" id="word" aria-live="polite"></div>
 
-    <label class="f" for="text">Кілька слів</label>
-    <textarea id="text" maxlength="1500" placeholder="Як відреагувала людина, коли побачила картину? Що сподобалось, що ні?"></textarea>
+    <label class="f" for="text" data-t="words">Кілька слів</label>
+    <textarea id="text" maxlength="1500" data-p="ph1" placeholder="Як відреагувала людина, коли побачила картину? Що сподобалось, що ні?"></textarea>
 
-    <label class="f" for="author">Як вас підписати</label>
-    <input type="text" id="author" maxlength="60" placeholder="Наприклад: Оля, Київ" autocomplete="given-name">
-    <p class="hint">Можна лише ім'я. Прізвище, телефон чи email на сайті не показуємо.</p>
+    <label class="f" for="author" data-t="sign">Як вас підписати</label>
+    <input type="text" id="author" maxlength="60" data-p="ph2" placeholder="Наприклад: Оля, Київ" autocomplete="given-name">
+    <p class="hint" data-t="hint">Можна лише ім'я. Прізвище, телефон чи email на сайті не показуємо.</p>
 
-    <label class="f">Фото з картиною <span style="font-weight:400">(необов'язково)</span></label>
-    <label class="drop" for="photo"><img id="thumb" alt=""><span id="ptxt">Додати фото: картина на стіні, в руках, момент дарування</span></label>
+    <label class="f" data-t="photo">Фото з картиною (необов'язково)</label>
+    <label class="drop" for="photo"><img id="thumb" alt=""><span id="ptxt" data-t="ptxt">Додати фото: картина на стіні, в руках, момент дарування</span></label>
     <input type="file" id="photo" accept="image/*" hidden>
 
-    <label class="check"><input type="checkbox" id="consent"> Можна показати мій відгук і фото на сайті Кислих пичок</label>
+    <label class="check"><input type="checkbox" id="consent"> <span data-t="consent">Можна показати мій відгук і фото на сайті Кислих пичок</span></label>
 
     <div class="err" id="err" role="alert"></div>
-    <button class="btn" id="go" type="submit">Надіслати відгук</button>
+    <button class="btn" id="go" type="submit" data-t="send">Надіслати відгук</button>
   </form>
 
   <div class="box msg" id="done" hidden>
-    <div class="big">Дякуємо!</div>
-    <p>Художник обов'язково прочитає. Якщо дали згоду, відгук з'явиться на сайті після того, як ми його переглянемо.</p>
-    <a class="btn ghost" href="/">На головну</a>
+    <div class="big" data-t="thx">Дякуємо!</div>
+    <p data-t="thx2">Художник обов'язково прочитає. Якщо дали згоду, відгук з'явиться на сайті після того, як ми його переглянемо.</p>
+    <a class="btn ghost" href="/" id="homeL" data-t="home">На головну</a>
   </div>
 </div></main>
 <script>
 const $=id=>document.getElementById(id);
 const q=new URLSearchParams(location.search),id=q.get('id'),t=q.get('t');
 const api=window.KP_API;
-const WORDS=['','Зовсім не те','Так собі','Нормально','Добре','Неймовірно!'];
-let rating=0,photo=null;
+const TR={
+ uk:{h1:'Як вам портрет?',rate:'Оцінка',words:'Кілька слів',ph1:'Як відреагувала людина, коли побачила картину? Що сподобалось, що ні?',sign:'Як вас підписати',ph2:'Наприклад: Оля, Київ',
+  hint:"Можна лише ім'я. Прізвище, телефон чи email на сайті не показуємо.",photo:"Фото з картиною (необов'язково)",ptxt:'Додати фото: картина на стіні, в руках, момент дарування',
+  consent:'Можна показати мій відгук і фото на сайті Кислих пичок',send:'Надіслати відгук',sending:'Надсилаємо…',thx:'Дякуємо!',thx2:"Художник обов'язково прочитає. Якщо дали згоду, відгук з'явиться на сайті після того, як ми його переглянемо.",home:'На головну',
+  words5:['','Зовсім не те','Так собі','Нормально','Добре','Неймовірно!'],checking:'Хвилинку, перевіряємо посилання…',bad:'Посилання не працює. Відкрийте його прямо з листа або просто відповідайте на лист, ми допоможемо.',
+  incomplete:'Посилання неповне. Відкрийте його, будь ласка, прямо з листа.',already:'Ви вже залишили відгук до цього замовлення. Дякуємо!',net:'Не вдалося завантажити. Перевірте інтернет і оновіть сторінку.',
+  gift:(n,s)=>`Портрет для ${n} (${s}). Розкажіть, як пройшов момент, коли дарували.`,self:s=>`Ваш портрет (${s}). Розкажіть, як він вам.`,
+  photoOk:'Фото додано. Натисніть, щоб замінити.',photoBad:'Це фото не вдалося відкрити. Спробуйте інше.',
+  errs:{bad_rating:'Поставте, будь ласка, зірочки.',missing_fields:'Напишіть кілька слів і як вас підписати.',already:'Відгук до цього замовлення вже є.',photo_too_big:'Фото завелике, спробуйте інше.',bad_link:'Посилання не працює, відкрийте його з листа.'},
+  fail:'Не вдалося надіслати. Спробуйте ще раз.',of:' з 5',homeUrl:'/'},
+ en:{h1:'How do you like the portrait?',rate:'Rating',words:'A few words',ph1:'How did they react when they saw the painting? What did you like, what not?',sign:'How should we sign it',ph2:'For example: Emma, London',
+  hint:"A first name is enough. We never show surnames, phone numbers or emails on the site.",photo:'A photo with the painting (optional)',ptxt:'Add a photo: the painting on the wall, in hands, the moment of giving',
+  consent:'You may show my review and photo on the Sour Mugs website',send:'Send review',sending:'Sending…',thx:'Thank you!',thx2:"The artist will read it. If you agreed, your review will appear on the site after we check it.",home:'Back to home',
+  words5:['','Not what I hoped','So-so','Okay','Good','Amazing!'],checking:'One moment, checking the link…',bad:"This link doesn't work. Open it straight from the email, or just reply to the email and we'll help.",
+  incomplete:'The link is incomplete. Please open it straight from the email.',already:"You've already reviewed this order. Thank you!",net:"Couldn't load. Check your connection and refresh the page.",
+  gift:(n,s)=>`Portrait of ${n} (${s}). Tell us how the moment of giving went.`,self:s=>`Your portrait (${s}). Tell us how you like it.`,
+  photoOk:'Photo added. Click to replace.',photoBad:"This photo couldn't be opened. Try another one.",
+  errs:{bad_rating:'Please choose a star rating.',missing_fields:'Please write a few words and how to sign it.',already:'This order already has a review.',photo_too_big:'The photo is too large, try another one.',bad_link:"The link doesn't work, open it from the email."},
+  fail:"Couldn't send. Please try again.",of:' out of 5',homeUrl:'/en/'},
+ fr:{h1:'Le portrait vous plaît ?',rate:'Note',words:'Quelques mots',ph1:"Comment la personne a-t-elle réagi en découvrant le tableau ? Qu'avez-vous aimé, ou pas ?",sign:'Comment signer',ph2:'Par exemple : Léa, Lyon',
+  hint:"Un prénom suffit. Nous n'affichons jamais nom, téléphone ou e-mail sur le site.",photo:'Une photo avec le tableau (facultatif)',ptxt:'Ajouter une photo : le tableau au mur, dans les mains, le moment du cadeau',
+  consent:'Vous pouvez publier mon avis et ma photo sur le site Mines Boudeuses',send:"Envoyer l'avis",sending:'Envoi…',thx:'Merci !',thx2:"L'artiste le lira. Si vous avez donné votre accord, l'avis apparaîtra sur le site après vérification.",home:"Retour à l'accueil",
+  words5:['','Pas du tout ça','Bof','Correct','Bien','Génial !'],checking:'Un instant, nous vérifions le lien…',bad:"Ce lien ne fonctionne pas. Ouvrez-le directement depuis l'e-mail, ou répondez simplement à l'e-mail.",
+  incomplete:"Le lien est incomplet. Ouvrez-le directement depuis l'e-mail.",already:'Vous avez déjà laissé un avis pour cette commande. Merci !',net:'Chargement impossible. Vérifiez votre connexion et actualisez la page.',
+  gift:(n,s)=>`Portrait de ${n} (${s}). Racontez-nous le moment du cadeau.`,self:s=>`Votre portrait (${s}). Dites-nous s'il vous plaît.`,
+  photoOk:'Photo ajoutée. Cliquez pour la remplacer.',photoBad:"Impossible d'ouvrir cette photo. Essayez-en une autre.",
+  errs:{bad_rating:'Choisissez une note en étoiles.',missing_fields:'Écrivez quelques mots et comment signer.',already:'Cette commande a déjà un avis.',photo_too_big:'La photo est trop lourde, essayez-en une autre.',bad_link:"Le lien ne fonctionne pas, ouvrez-le depuis l'e-mail."},
+  fail:"Envoi impossible. Réessayez.",of:' sur 5',homeUrl:'/fr/'}};
+let L=TR.uk,rating=0,photo=null;
+function applyLang(lang){L=TR[lang]||TR.uk;document.documentElement.lang=lang;
+  document.querySelectorAll('[data-t]').forEach(e=>{const k=e.dataset.t;if(typeof L[k]==='string')e.textContent=L[k];});
+  document.querySelectorAll('[data-p]').forEach(e=>e.placeholder=L[e.dataset.p]);
+  $('homeL').href=L.homeUrl;[...st.children].forEach((b,i)=>b.setAttribute('aria-label',(i+1)+L.of));paint();}
 async function call(b){const r=await fetch(api,{method:'POST',body:JSON.stringify(b)});return r.json();}
 function fail(text){$('sub').textContent=text;}
-(async()=>{
-  if(!id||!t||!api)return fail('Посилання неповне. Відкрийте його, будь ласка, прямо з листа.');
-  try{
-    const r=await call({action:'reviewInfo',id,t});
-    if(!r.ok)return fail('Посилання не працює. Відкрийте його прямо з листа або просто відповідайте на лист, ми допоможемо.');
-    if(r.already){$('sub').textContent='Ви вже залишили відгук до цього замовлення. Дякуємо!';return;}
-    $('sub').textContent=r.who==='friend'
-      ?`Портрет для ${r.name} (${r.sizeLabel}). Розкажіть, як пройшов момент, коли дарували.`
-      :`Ваш портрет (${r.sizeLabel}). Розкажіть, як він вам.`;
-    $('f').hidden=false;
-  }catch(e){fail('Не вдалося завантажити. Перевірте інтернет і оновіть сторінку.');}
-})();
 const st=$('stars');
 for(let i=1;i<=5;i++){const b=document.createElement('button');b.type='button';b.textContent='★';b.setAttribute('role','radio');b.setAttribute('aria-label',i+' з 5');
   b.onclick=()=>{rating=i;paint();};st.append(b);}
-function paint(){[...st.children].forEach((b,i)=>{b.classList.toggle('on',i<rating);b.setAttribute('aria-checked',i+1===rating);});$('word').textContent=WORDS[rating];}
+function paint(){[...st.children].forEach((b,i)=>{b.classList.toggle('on',i<rating);b.setAttribute('aria-checked',i+1===rating);});$('word').textContent=L.words5[rating];}
+const guess=(navigator.language||'uk').slice(0,2);applyLang(['en','fr','uk'].includes(guess)?guess:'en');
+(async()=>{
+  $('sub').textContent=L.checking;
+  if(!id||!t||!api)return fail(L.incomplete);
+  try{
+    const r=await call({action:'reviewInfo',id,t});
+    if(!r.ok)return fail(L.bad);
+    applyLang(r.lang||'uk');
+    if(r.already){$('sub').textContent=L.already;return;}
+    $('sub').textContent=r.who==='friend'?L.gift(r.name,r.sizeLabel):L.self(r.sizeLabel);
+    $('f').hidden=false;
+  }catch(e){fail(L.net);}
+})();
 $('photo').onchange=async e=>{const f=e.target.files[0];if(!f)return;
-  try{photo=await pack(f);$('thumb').src='data:image/jpeg;base64,'+photo.data;$('thumb').style.display='block';$('ptxt').textContent='Фото додано. Натисніть, щоб замінити.';}
-  catch(err){$('err').textContent='Це фото не вдалося відкрити. Спробуйте інше.';}};
+  try{photo=await pack(f);$('thumb').src='data:image/jpeg;base64,'+photo.data;$('thumb').style.display='block';$('ptxt').textContent=L.photoOk;}
+  catch(err){$('err').textContent=L.photoBad;}};
 async function pack(file){
   const img=await new Promise((ok,no)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=no;im.src=URL.createObjectURL(file);});
   const k=Math.min(1,1600/Math.max(img.naturalWidth,img.naturalHeight));
@@ -103,18 +135,17 @@ async function pack(file){
   c.getContext('2d').drawImage(img,0,0,c.width,c.height);
   return{data:c.toDataURL('image/jpeg',.85).split(',')[1]};
 }
-const ERR={bad_rating:'Поставте, будь ласка, зірочки.',missing_fields:'Напишіть кілька слів і як вас підписати.',already:'Відгук до цього замовлення вже є.',photo_too_big:'Фото завелике, спробуйте інше.',bad_link:'Посилання не працює, відкрийте його з листа.'};
 $('f').onsubmit=async e=>{
   e.preventDefault();$('err').textContent='';
-  if(!rating)return $('err').textContent=ERR.bad_rating;
-  if(!$('text').value.trim()||!$('author').value.trim())return $('err').textContent=ERR.missing_fields;
-  const btn=$('go');btn.disabled=true;btn.textContent='Надсилаємо…';
+  if(!rating)return $('err').textContent=L.errs.bad_rating;
+  if(!$('text').value.trim()||!$('author').value.trim())return $('err').textContent=L.errs.missing_fields;
+  const btn=$('go');btn.disabled=true;btn.textContent=L.sending;
   try{
     const r=await call({action:'review',id,t,rating,text:$('text').value.trim(),author:$('author').value.trim(),consent:$('consent').checked,photo});
     if(!r.ok)throw new Error(r.error);
     $('f').hidden=true;$('sub').hidden=true;$('done').hidden=false;
-  }catch(err){$('err').textContent=ERR[err.message]||'Не вдалося надіслати. Спробуйте ще раз.';}
-  finally{btn.disabled=false;btn.textContent='Надіслати відгук';}
+  }catch(err){$('err').textContent=L.errs[err.message]||L.fail;}
+  finally{btn.disabled=false;btn.textContent=L.send;}
 };
 </script>
 </body>

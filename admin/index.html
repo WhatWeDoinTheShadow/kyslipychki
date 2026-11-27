@@ -116,7 +116,8 @@ const ST=[['new','Нове'],['paid','Оплачено'],['painting','Малює
 const SL=Object.fromEntries(ST);
 const $=s=>document.querySelector(s);
 const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const money=n=>(+n||0).toLocaleString('uk-UA')+' ₴';
+const money=(n,c)=>{c=c||'UAH';const v=(+n||0).toLocaleString('uk-UA');return c==='UAH'?v+' ₴':c==='EUR'?v+' €':({USD:'$',GBP:'£'}[c]||c+' ')+v;};
+const FLAG={en:'🇬🇧 EN',fr:'🇫🇷 FR'};
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
 /* «Запам'ятати мене»: пароль лежить і в localStorage, і в cookie на рік, бо iPhone та вбудовані браузери інколи чистять одне з них */
 const keep={
@@ -180,7 +181,7 @@ function renderAll(){renderStats();renderList();if(sel)renderDetail();}
 function renderStats(){
   const now=new Date(),mo=orders.filter(o=>{const d=new Date(o.created);return d.getMonth()==now.getMonth()&&d.getFullYear()==now.getFullYear()&&o.status!=='cancelled';});
   const c=s=>orders.filter(o=>o.status===s).length;
-  $('#stats').innerHTML=[['new',c('new'),'нових'],['',c('paid')+c('painting'),'в роботі'],['',c('shipped'),'в дорозі'],['',money(mo.reduce((a,o)=>a+(+o.total||0),0)),'за цей місяць']]
+  $('#stats').innerHTML=[['new',c('new'),'нових'],['',c('paid')+c('painting'),'в роботі'],['',c('shipped'),'в дорозі'],['',money(mo.filter(o=>(o.currency||'UAH')==='UAH').reduce((a,o)=>a+(+o.total||0),0)),'за цей місяць']]
     .map(([k,v,l])=>`<div class="st ${k}"><div class="fig">${esc(v)}</div><small>${l}</small></div>`).join('');
   const by={};mo.forEach(o=>{const s=source(o);by[s]=(by[s]||0)+1;});
   const top=Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,5),mx=top[0]?.[1]||1;
@@ -192,8 +193,8 @@ function renderStats(){
 function renderList(){
   const L=orders.filter(o=>(filter==='all'||o.status===filter)&&(!q||[o.id,o.name,o.email,o.phone,o.city].join(' ').toLowerCase().includes(q)));
   $('#list').innerHTML=L.length?L.map(o=>`<button class="o s-${esc(o.status)}" data-id="${esc(o.id)}" aria-current="${sel===o.id}">
-    <span class="dot"></span><span class="nm">${esc(o.name)}${o.who==='friend'?' · подарунок':''}</span><span class="sum">${money(o.total)}</span>
-    <span class="meta"><span class="tag">${esc(SL[o.status]||o.status)}</span><span>${esc(o.sizeLabel)}</span>${o.rush?'<span>терміново</span>':''}<span>${ago(o.created)}</span><span>${esc(source(o))}</span></span></button>`).join('')
+    <span class="dot"></span><span class="nm">${esc(o.name)}${o.who==='friend'?' · подарунок':''}</span><span class="sum">${money(o.total,o.currency)}</span>
+    <span class="meta"><span class="tag">${esc(SL[o.status]||o.status)}</span><span>${esc(o.sizeLabel)}</span>${FLAG[o.lang]?`<span>${FLAG[o.lang]}</span>`:''}${o.rush?'<span>терміново</span>':''}<span>${ago(o.created)}</span><span>${esc(source(o))}</span></span></button>`).join('')
     :`<div class="empty">${orders.length?'Нічого не знайдено за цим фільтром.':'Замовлень поки немає. Щойно хтось замовить портрет, він з\'явиться тут.'}</div>`;
   $('#list').querySelectorAll('.o').forEach(b=>b.onclick=()=>{sel=b.dataset.id;renderList();renderDetail();});
 }
@@ -206,10 +207,10 @@ async function renderDetail(){
   <dl>
    <dt>Для кого</dt><dd>${esc(o.name)} · ${o.who==='friend'?'подарунок другу':'для себе'}</dd>
    <dt>Полотно</dt><dd>${esc(o.sizeLabel)} · ${esc(o.tech||'—')}${o.rush?' · <b>терміново 48 год</b>':''}</dd>
-   <dt>Сума</dt><dd><b>${money(o.total)}</b></dd>
+   <dt>Сума</dt><dd><b>${money(o.total,o.currency)}</b>${o.currency&&o.currency!=='UAH'?' + доставка (узгодити)':''}</dd>${o.lang&&o.lang!=='uk'?`<dt>Мова</dt><dd>${FLAG[o.lang]||esc(o.lang)}</dd>`:''}${o.country?`<dt>Країна</dt><dd>${esc(o.country)}</dd>`:''}
    <dt>Телефон</dt><dd><a href="tel:${esc(String(o.phone).replace(/[^\d+]/g,''))}">${esc(o.phone)}</a></dd>
    <dt>Email</dt><dd><a href="mailto:${esc(o.email)}">${esc(o.email)}</a></dd>
-   <dt>Нова пошта</dt><dd>${esc(o.city)}</dd>
+   <dt>${o.country?'Адреса':'Нова пошта'}</dt><dd>${esc(o.city)}</dd>
    <dt>Створено</dt><dd>${new Date(o.created).toLocaleString('uk-UA')}</dd>
    <dt>Джерело</dt><dd>${esc(source(o))}${o.utm_campaign?' · '+esc(o.utm_campaign):''}</dd>
    ${o.referrer?`<dt>Реферер</dt><dd>${esc(o.referrer)}</dd>`:''}

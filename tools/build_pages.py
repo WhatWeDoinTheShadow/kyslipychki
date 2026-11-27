@@ -4,62 +4,162 @@ import json, os, sys, html
 
 REPO = sys.argv[1]
 SITE = "https://kyslipychki.shop"
-TODAY = "2026-11-26"
+TODAY = "2026-11-27"
 ORDER = "/#order"
 
-PRICES = [("Квадрат", "20×20 см", 1700), ("Портрет", "30×40 см", 2666), ("Великий портрет", "50×70 см", 4111)]
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from i18n_home import SLUGS, BRAND as BRAND_I18N, PRICES as PRICES_INTL
 
+LANG = "uk"
 GA = """<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-NXWSKHWM"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>"""
+BRAND = {"uk": "Кислі пички", **BRAND_I18N}
+HOME = {"uk": "/", "en": "/en/", "fr": "/fr/"}
+ALT = {uk: {"uk": uk, "en": SLUGS["en"][uk], "fr": SLUGS["fr"][uk]} for uk in SLUGS["en"]}
+REV = {v: k for k, m in ALT.items() for v in m.values()}
+LOCALE = {"uk": "uk_UA", "en": "en_US", "fr": "fr_FR"}
 
-MENU = [("/", "Головна"), ("/#how", "Як це працює"), ("/#prices", "Ціни"), ("/portret-po-foto/", "Портрет по фото"),
-        ("/sharzh-po-foto/", "Шарж по фото"), ("/blog/", "Блог"), ("/#faq", "Питання")]
-MENU_LINKS = "".join(f'<a href="{u}">{t}</a>' for u, t in MENU)
-NAV = f"""<nav aria-label="Головне меню">
-  <a class="logo" href="/" aria-label="Кислі пички, на головну"><img src="/logo-white.svg" alt="Кислі пички" width="160" height="48"></a>
-  <a class="l" href="/portret-po-foto/">Портрет по фото</a>
-  <a class="l" href="/sharzh-po-foto/">Шарж по фото</a>
-  <a class="l" href="/blog/">Блог</a>
-  <a class="btn" href="/#order">Замовити</a>
-  <button class="burger" type="button" aria-label="Меню" aria-expanded="false" aria-controls="menu"><span></span></button>
-  <div class="menu" id="menu">{MENU_LINKS}</div>
-</nav>
-<script>(()=>{{const b=document.querySelector('.burger'),m=document.getElementById('menu');b.onclick=()=>{{const on=m.classList.toggle('on');b.setAttribute('aria-expanded',on);}};m.onclick=e=>{{if(e.target.tagName==='A'){{m.classList.remove('on');b.setAttribute('aria-expanded',false);}}}};}})();</script>"""
-NAV_LD = {"@type": "SiteNavigationElement", "name": [t for _, t in MENU], "url": [SITE + u for u, _ in MENU]}
-
-FOOTER = """<footer class="band">
-  <div>
-    <a class="logo" href="/" aria-label="Кислі пички"><img src="/logo-white.svg" alt="Кислі пички" width="186" height="56"></a>
-    <span>Портрети фарбами на полотні для тих, кому зараз сумно.</span>
-  </div>
-  <div class="flinks">
-    <a href="/portret-po-foto/">Портрет по фото</a>
-    <a href="/sharzh-po-foto/">Шарж по фото</a>
-    <a href="/blog/">Блог</a>
-    <a href="/#privacy">Політика конфіденційності</a>
-    <span>Сайт розроблено <a href="https://webrarium.com" target="_blank" rel="noopener">Webrarium</a></span>
-  </div>
-  <a class="btn" href="/#order">Замовити</a>
-</footer>"""
-
-HELP = """<div class="help">
+UI = {
+  "uk": dict(menu=[("/", "Головна"), ("/#how", "Як це працює"), ("/#prices", "Ціни"), ("/portret-po-foto/", "Портрет по фото"),
+                   ("/sharzh-po-foto/", "Шарж по фото"), ("/blog/", "Блог"), ("/#faq", "Питання")],
+             top=[("/portret-po-foto/", "Портрет по фото"), ("/sharzh-po-foto/", "Шарж по фото"), ("/blog/", "Блог")],
+             main_menu="Головне меню", home_aria="Кислі пички, на головну", order="Замовити", order_portrait="Замовити портрет",
+             burger="Меню", tagline="Портрети фарбами на полотні для тих, кому зараз сумно.", privacy="Політика конфіденційності",
+             made="Сайт розроблено", more="Читати далі", blog_list="Статті блогу", stretched="полотно на підрамнику",
+             cta="Надішли фото, художник намалює портрет фарбами на полотні.",
+             price_note="Терміново за 48 годин: +666 ₴. Доставка Новою поштою за тарифами перевізника.",
+             cookie="Ми використовуємо Google Analytics, щоб розуміти, звідки приходять люди і що їм цікаво. Без твоєї згоди аналітика не вмикається.",
+             cookie_more="Детальніше", allow="Дозволити", deny="Лише необхідні",
+             help="""<div class="help">
   <b>Якщо людина говорить, що не хоче жити, спершу не подарунок, а розмова з тими, хто вміє допомагати.</b>
   Lifeline Ukraine, цілодобово і безкоштовно:
   <div class="num">7333</div>
   Можна подзвонити або написати на <a href="https://lifelineukraine.com">lifelineukraine.com</a>.
-</div>"""
+</div>"""),
+  "en": dict(menu=[("/en/", "Home"), ("/en/#how", "How it works"), ("/en/#prices", "Prices"), ("/en/portrait-from-photo/", "Portrait from photo"),
+                   ("/en/caricature-from-photo/", "Caricature from photo"), ("/en/blog/", "Blog"), ("/en/#faq", "FAQ")],
+             top=[("/en/portrait-from-photo/", "Portrait from photo"), ("/en/caricature-from-photo/", "Caricature"), ("/en/blog/", "Blog")],
+             main_menu="Main menu", home_aria="Sour Mugs, home", order="Order", order_portrait="Order a portrait",
+             burger="Menu", tagline="Painted portraits on canvas for anyone feeling sad.", privacy="Privacy policy",
+             made="Website by", more="Read next", blog_list="Blog articles", stretched="stretched canvas",
+             cta="Send a photo and an artist will paint the portrait on canvas.",
+             price_note="Rush, in 48 hours: +$22 / +£16 / +€19. Shipping from Ukraine with Nova Post is quoted for your country before you pay.",
+             cookie="We use Google Analytics to understand where visitors come from and what they find useful. It stays off unless you agree.",
+             cookie_more="Learn more", allow="Allow", deny="Essential only",
+             help="""<div class="help">
+  <b>If someone talks about not wanting to live, a gift comes second. First, talk to people who know how to help.</b>
+  Free, confidential, 24/7: UK and Ireland, Samaritans
+  <div class="num">116 123</div>
+  USA and Canada: call or text 988. Anywhere else: <a href="https://findahelpline.com">findahelpline.com</a>.
+</div>"""),
+  "fr": dict(menu=[("/fr/", "Accueil"), ("/fr/#how", "Comment ça marche"), ("/fr/#prices", "Prix"), ("/fr/portrait-photo-peinture/", "Portrait d'après photo"),
+                   ("/fr/caricature-photo/", "Caricature d'après photo"), ("/fr/blog/", "Blog"), ("/fr/#faq", "Questions")],
+             top=[("/fr/portrait-photo-peinture/", "Portrait d'après photo"), ("/fr/caricature-photo/", "Caricature"), ("/fr/blog/", "Blog")],
+             main_menu="Menu principal", home_aria="Mines Boudeuses, accueil", order="Commander", order_portrait="Commander un portrait",
+             burger="Menu", tagline="Des portraits peints sur toile pour celles et ceux qui ont le moral en berne.", privacy="Politique de confidentialité",
+             made="Site réalisé par", more="À lire aussi", blog_list="Articles du blog", stretched="toile sur châssis",
+             cta="Envoyez une photo, un artiste peindra le portrait sur toile.",
+             price_note="Express en 48 heures : +19 €. La livraison depuis l'Ukraine avec Nova Post est chiffrée pour votre pays avant le paiement.",
+             cookie="Nous utilisons Google Analytics pour comprendre d'où viennent les visiteurs et ce qui les intéresse. Rien n'est activé sans votre accord.",
+             cookie_more="En savoir plus", allow="Accepter", deny="Refuser",
+             help="""<div class="help">
+  <b>Si la personne dit ne plus vouloir vivre, le cadeau attendra. Parlez d'abord à ceux qui savent aider.</b>
+  Gratuit, 24 h/24 : France
+  <div class="num">3114</div>
+  Belgique : 0800 32 123 · Suisse : 143 · Canada : 988. Ailleurs : <a href="https://findahelpline.com/fr-FR">findahelpline.com</a>.
+</div>"""),
+}
+SIZES_I18N = {"uk": [("sq", "Квадрат", "20×20 см"), ("pt", "Портрет", "30×40 см"), ("lg", "Великий портрет", "50×70 см")],
+              "en": [("sq", "Square", "20×20 cm"), ("pt", "Portrait", "30×40 cm"), ("lg", "Large portrait", "50×70 cm")],
+              "fr": [("sq", "Carré", "20×20 cm"), ("pt", "Portrait", "30×40 cm"), ("lg", "Grand portrait", "50×70 cm")]}
+UAH = {"sq": 1700, "pt": 2666, "lg": 4111}
+
+
+def u(key):
+    """Шлях сторінки поточною мовою за українським ключем."""
+    return ALT[key][LANG] if key in ALT else key
+
+
+def order_link():
+    return HOME[LANG] + "#order"
+
+
+ORDER = "/#order"
+
+
+def fmt_price(sid):
+    if LANG == "uk":
+        return f"{UAH[sid]:,} ₴".replace(",", " ")
+    if LANG == "fr":
+        return f"{PRICES_INTL['EUR'][sid]} €"
+    return f"${PRICES_INTL['USD'][sid]} · £{PRICES_INTL['GBP'][sid]} · €{PRICES_INTL['EUR'][sid]}"
+
+
+def nav():
+    ui = UI[LANG]
+    links = "".join(f'<a href="{a}">{t}</a>' for a, t in ui["menu"])
+    top = "".join(f'\n  <a class="l" href="{a}">{t}</a>' for a, t in ui["top"])
+    return f"""<nav aria-label="{ui['main_menu']}">
+  <a class="logo" href="{HOME[LANG]}" aria-label="{ui['home_aria']}"><img src="{logo_src()}" alt="{BRAND[LANG]}" width="160" height="48"></a>{top}
+  {langs_html()}
+  <a class="btn" href="{order_link()}">{ui['order']}</a>
+  <button class="burger" type="button" aria-label="{ui['burger']}" aria-expanded="false" aria-controls="menu"><span></span></button>
+  <div class="menu" id="menu">{links}{langs_html(mobile=True)}</div>
+</nav>
+<script>(()=>{{const b=document.querySelector('.burger'),m=document.getElementById('menu');b.onclick=()=>{{const on=m.classList.toggle('on');b.setAttribute('aria-expanded',on);}};m.onclick=e=>{{if(e.target.tagName==='A'){{m.classList.remove('on');b.setAttribute('aria-expanded',false);}}}};}})();</script>"""
+
+
+CUR_KEY = "/"
+
+
+def langs_html(mobile=False):
+    alts = ALT.get(CUR_KEY, HOME)
+    names = {"uk": ("UA", "Українська"), "en": ("EN", "English"), "fr": ("FR", "Français")}
+    a = "".join(f'<a href="{alts[l]}" lang="{l}" hreflang="{l}"{" aria-current=\"true\"" if l == LANG else ""}>{names[l][1 if mobile else 0]}</a>'
+                for l in ("uk", "en", "fr"))
+    return f'<span class="{"mlangs" if mobile else "langs"}">{a}</span>'
+
+
+def logo_src():
+    return "/logo-white.svg" if LANG == "uk" else f"/assets/logo-{LANG}-white.svg"
+
+
+def footer():
+    ui = UI[LANG]
+    top = "".join(f'\n    <a href="{a}">{t}</a>' for a, t in ui["top"])
+    return f"""<footer class="band">
+  <div>
+    <a class="logo" href="{HOME[LANG]}" aria-label="{BRAND[LANG]}"><img src="{logo_src()}" alt="{BRAND[LANG]}" width="186" height="56"></a>
+    <span>{ui['tagline']}</span>
+  </div>
+  <div class="flinks">{top}
+    <a href="{HOME[LANG]}#privacy">{ui['privacy']}</a>
+    <span>{ui['made']} <a href="https://webrarium.com" target="_blank" rel="noopener">Webrarium</a></span>
+  </div>
+  <a class="btn" href="{order_link()}">{ui['order']}</a>
+</footer>
+<div class="cc" id="cc" hidden role="region" aria-label="Cookies">
+  <p>{ui['cookie']} <a href="{HOME[LANG]}#privacy">{ui['cookie_more']}</a></p>
+  <div class="row"><button class="btn" type="button" id="ccY">{ui['allow']}</button><button class="btn ghost" type="button" id="ccN">{ui['deny']}</button></div>
+</div>
+<script>(()=>{{const c=document.getElementById('cc');let v=null;try{{v=localStorage.getItem('kp_consent')}}catch(e){{}}
+if(!v)c.hidden=false;const set=x=>{{try{{localStorage.setItem('kp_consent',x)}}catch(e){{}}c.hidden=true;if(x==='yes')gtag('consent','update',{{analytics_storage:'granted'}});}};
+document.getElementById('ccY').onclick=()=>set('yes');document.getElementById('ccN').onclick=()=>set('no');}})();</script>"""
+
+
+def help_block():
+    return UI[LANG]["help"]
 
 
 def price_cards(note=True):
-    cards = "".join(
-        f'<div class="card"><b>{n}</b><div class="p">{p:,} ₴</div><p>{sz}, полотно на підрамнику</p></div>'.replace(f"{p:,}", f"{p:,}".replace(",", " "))
-        for n, sz, p in PRICES)
-    tail = '<p class="meta">Терміново за 48 годин: +666 ₴. Доставка Новою поштою за тарифами перевізника.</p>' if note else ""
-    return f'<div class="cards">{cards}</div>{tail}'
+    st = UI[LANG]["stretched"]
+    cards = "".join(f'<div class="card"><b>{n}</b><div class="p">{fmt_price(i)}</div><p>{sz}, {st}</p></div>' for i, n, sz in SIZES_I18N[LANG])
+    tail = f'<p class="meta">{UI[LANG]["price_note"]}</p>' if note else ""
+    return f'<div class="cards{" cards-multi" if LANG == "en" else ""}">{cards}</div>{tail}'
 
 
-def cta(text="Надішли фото, художник намалює портрет фарбами на полотні."):
-    return f'<div class="cta"><p>{text}</p><a class="btn" href="{ORDER}">Замовити портрет</a></div>'
+def cta(text=None):
+    return f'<div class="cta"><p>{text or UI[LANG]["cta"]}</p><a class="btn" href="{order_link()}">{UI[LANG]["order_portrait"]}</a></div>'
 
 
 def faq_html(faqs):
@@ -85,36 +185,51 @@ def crumbs_html(items):
 
 def offer_ld(name, desc, url):
     return {"@type": "Product", "name": name, "description": desc, "url": SITE + url,
-            "image": [SITE + WIDE.get(url, "/og.jpg"), SITE + "/after.jpg"], "brand": {"@type": "Brand", "name": "Кислі пички"},
-            "offers": {"@type": "AggregateOffer", "priceCurrency": "UAH", "lowPrice": 1700, "highPrice": 4111,
-                       "offerCount": 3, "availability": "https://schema.org/InStock"}}
+            "image": [SITE + wide(url), SITE + "/after.jpg"], "brand": {"@type": "Brand", "name": BRAND[LANG]},
+            "offers": offers_ld()}
+
+
+def offers_ld():
+    if LANG == "uk":
+        return {"@type": "AggregateOffer", "priceCurrency": "UAH", "lowPrice": 1700, "highPrice": 4111,
+                "offerCount": 3, "availability": "https://schema.org/InStock"}
+    curs = ["EUR"] if LANG == "fr" else ["USD", "GBP", "EUR"]
+    o = [{"@type": "AggregateOffer", "priceCurrency": c, "lowPrice": PRICES_INTL[c]["sq"], "highPrice": PRICES_INTL[c]["lg"],
+          "offerCount": 3, "availability": "https://schema.org/InStock"} for c in curs]
+    return o if len(o) > 1 else o[0]
 
 
 def page(path, title, desc, body, graph, og_type="website", image=None):
+    global CUR_KEY
+    CUR_KEY = REV.get(path, path)
     url = SITE + path
-    image = image or WIDE.get(path, "/og.jpg")
-    graph = graph + [{"@type": "WebPage", "@id": url, "url": url, "name": title, "inLanguage": "uk",
+    image = image or wide(path)
+    graph = graph + [{"@type": "WebPage", "@id": url, "url": url, "name": title, "inLanguage": LANG,
                       "primaryImageOfPage": {"@type": "ImageObject", "url": SITE + image, "width": 1200, "height": 630},
-                      "isPartOf": {"@type": "WebSite", "url": SITE + "/", "name": "Кислі пички"}}, NAV_LD]
-    if path in COVERS or path == "/blog/":
-        graph.append(cards_ld(more_items(path) if path != "/blog/" else [c for c in CARDS if c[0].startswith("/blog/")],
-                              "Читати далі" if path != "/blog/" else "Статті блогу"))
-    org = {"@type": "Organization", "@id": SITE + "/#org", "name": "Кислі пички", "url": SITE + "/",
-           "logo": SITE + "/logo.svg", "email": "kyslipychki@gmail.com"}
+                      "isPartOf": {"@type": "WebSite", "url": SITE + HOME[LANG], "name": BRAND[LANG]}},
+                     {"@type": "SiteNavigationElement", "name": [t for _, t in UI[LANG]["menu"]], "url": [SITE + a for a, _ in UI[LANG]["menu"]]}]
+    if CUR_KEY in COVERS or CUR_KEY == "/blog/":
+        items = more_items(path) if CUR_KEY != "/blog/" else [c for c in cards_list() if REV.get(c[0], c[0]).startswith("/blog/")]
+        graph.append(cards_ld(items, UI[LANG]["more"] if CUR_KEY != "/blog/" else UI[LANG]["blog_list"]))
+    org = {"@type": "Organization", "@id": SITE + "/#org", "name": BRAND[LANG], "alternateName": ["Кислі пички", "Sour Mugs", "Mines Boudeuses"],
+           "url": SITE + HOME[LANG], "logo": SITE + logo_src().replace("-white", ""), "email": "kyslipychki@gmail.com"}
     ld = json.dumps({"@context": "https://schema.org", "@graph": [org] + graph}, ensure_ascii=False)
+    alts = ALT.get(CUR_KEY)
+    alt_links = ("".join(f'\n<link rel="alternate" hreflang="{l}" href="{SITE}{alts[l]}">' for l in ("uk", "en", "fr"))
+                 + f'\n<link rel="alternate" hreflang="x-default" href="{SITE}{alts["en"]}">') if alts else ""
     doc = f"""<!DOCTYPE html>
-<html lang="uk">
+<html lang="{LANG}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title>
 <meta name="description" content="{html.escape(desc)}">
-<link rel="canonical" href="{url}">
+<link rel="canonical" href="{url}">{alt_links}
 <meta name="robots" content="index,follow,max-image-preview:large">
 <meta name="theme-color" content="#ffd23f">
 <meta property="og:type" content="{og_type}">
-<meta property="og:locale" content="uk_UA">
-<meta property="og:site_name" content="Кислі пички">
+<meta property="og:locale" content="{LOCALE[LANG]}">
+<meta property="og:site_name" content="{BRAND[LANG]}">
 <meta property="og:url" content="{url}">
 <meta property="og:title" content="{html.escape(title)}">
 <meta property="og:description" content="{html.escape(desc)}">
@@ -122,6 +237,9 @@ def page(path, title, desc, body, graph, og_type="website", image=None):
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/admin/icon-192.png">
+<script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}
+gtag('consent','default',{{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'}});
+try{{if(localStorage.getItem('kp_consent')==='yes')gtag('consent','update',{{analytics_storage:'granted'}});}}catch(e){{}}</script>
 {GA}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -130,9 +248,9 @@ def page(path, title, desc, body, graph, og_type="website", image=None):
 <script type="application/ld+json">{ld}</script>
 </head>
 <body>
-{NAV}
+{nav()}
 {body}
-{FOOTER}
+{footer()}
 </body>
 </html>
 """
@@ -151,6 +269,43 @@ COVERS = {
 }
 WIDE = {k: v[0].replace(".jpg", "-wide.jpg") for k, v in COVERS.items() if k != "/"}
 WIDE["/"] = "/og.jpg"
+COVER_ALT = {
+    "en": {"/": "A sad photo, a painted portrait and the laugh of the person who received it", "/portret-po-foto/": "Portrait painted on canvas from a photo",
+           "/sharzh-po-foto/": "Pastel caricature: a girl and her mountain of depression", "/blog/shcho-podaruvaty-druhu-yakomu-vazhko/": "Laughing after seeing the portrait they were given",
+           "/blog/druk-chy-zhyvopys-portret-z-foto/": "The artist's hand against a painted portrait"},
+    "fr": {"/": "Une photo triste, un portrait peint et le rire de la personne qui l'a reçu", "/portret-po-foto/": "Portrait peint sur toile d'après une photo",
+           "/sharzh-po-foto/": "Caricature au pastel : une jeune femme et sa montagne de déprime", "/blog/shcho-podaruvaty-druhu-yakomu-vazhko/": "Fou rire en découvrant le portrait offert",
+           "/blog/druk-chy-zhyvopys-portret-z-foto/": "La main de l'artiste devant un portrait peint"}}
+CARDS_I18N = {
+    "en": [("/", "Sad photo = funny portrait", "How we turn a sad photo into a warm, funny painting."),
+           ("/portret-po-foto/", "Custom portrait from a photo", "Painted by hand on canvas, shipped worldwide."),
+           ("/sharzh-po-foto/", "Caricature from a photo on canvas", "A kind caricature where the situation is funny, not their looks."),
+           ("/blog/shcho-podaruvaty-druhu-yakomu-vazhko/", "Gifts for a friend going through a hard time", "9 no-pressure ideas and how to give them gently."),
+           ("/blog/druk-chy-zhyvopys-portret-z-foto/", "Canvas print vs hand-painted portrait", "The difference, and how not to buy a print sold as a painting.")],
+    "fr": [("/", "Photo triste = portrait drôle", "Comment une photo triste devient un tableau tendre et drôle."),
+           ("/portret-po-foto/", "Portrait sur mesure d'après photo", "Peint à la main sur toile, dès 49 €."),
+           ("/sharzh-po-foto/", "Caricature d'après photo sur toile", "Une caricature tendre : la situation est drôle, pas le physique."),
+           ("/blog/shcho-podaruvaty-druhu-yakomu-vazhko/", "Quel cadeau pour un ami qui va mal", "9 idées sans pression et comment offrir avec délicatesse."),
+           ("/blog/druk-chy-zhyvopys-portret-z-foto/", "Impression sur toile ou peinture", "La différence, et comment ne pas acheter une impression vendue comme un tableau.")]}
+
+
+def wide(path):
+    k = REV.get(path, path)
+    if k == "/":
+        return "/og.jpg" if LANG == "uk" else f"/og-{LANG}.jpg"
+    return WIDE.get(k, "/og.jpg")
+
+
+def cards_list():
+    if LANG == "uk":
+        return CARDS
+    return [(ALT[k][LANG], t, d) for k, t, d in CARDS_I18N[LANG]]
+
+
+def cover(path):
+    k = REV.get(path, path)
+    img, alt = COVERS[k]
+    return img, (alt if LANG == "uk" else COVER_ALT[LANG][k])
 CARDS = [("/", "Сумна фотка = смішний портрет", "Як ми перетворюємо сумне фото на теплу смішну картину фарбами."),
          ("/portret-po-foto/", "Портрет по фото на замовлення", "Живопис фарбами на полотні, від 1700 ₴, доставка по Україні."),
          ("/sharzh-po-foto/", "Шарж по фото на полотні", "Добрий шарж, де смішні обставини, а не зовнішність."),
@@ -159,28 +314,28 @@ CARDS = [("/", "Сумна фотка = смішний портрет", "Як м
 
 
 def card(u, t, d):
-    img, alt = COVERS[u]
+    img, alt = cover(u)
     return (f'<a class="pcard" href="{u}"><img src="{img}" alt="{alt}" width="600" height="450" loading="lazy">'
             f'<span class="pc-t">{t}</span><span class="pc-d">{d}</span></a>')
 
 
 def cards_ld(items, name):
     return {"@type": "ItemList", "name": name, "itemListElement": [
-        {"@type": "ListItem", "position": i + 1, "url": SITE + u, "name": t, "image": SITE + COVERS[u][0]}
+        {"@type": "ListItem", "position": i + 1, "url": SITE + u, "name": t, "image": SITE + cover(u)[0]}
         for i, (u, t, d) in enumerate(items)]}
 
 
 def more_items(exclude):
-    return [c for c in CARDS if c[0] != exclude]
+    return [c for c in cards_list() if c[0] != exclude]
 
 
 def more_links(exclude):
-    return ('<section class="band more"><div class="wrap"><h2>Читати далі</h2><div class="pcards">'
+    return (f'<section class="band more"><div class="wrap"><h2>{UI[LANG]["more"]}</h2><div class="pcards">'
             + "".join(card(*c) for c in more_items(exclude)) + '</div></div></section>')
 
 
 def hero_cover(u):
-    return (f'<figure class="cover"><img src="{WIDE[u]}" alt="{COVERS[u][1]}" width="1200" height="630" fetchpriority="high"></figure>')
+    return (f'<figure class="cover"><img src="{wide(u)}" alt="{cover(u)[1]}" width="1200" height="630" fetchpriority="high"></figure>')
 
 
 def old_more_links(exclude):
@@ -344,7 +499,7 @@ body = f"""<main class="band"><article class="narrow">
     <li><b>Наодинці.</b> Не при всіх, щоб людина могла реагувати так, як їй зараз вдається.</li>
     <li><b>І потім залишайся поруч.</b> Подарунок відкриває розмову, але не замінює її.</li>
   </ul>
-  {HELP}
+  {help_block()}
   {cta("Хочеш подарувати другу картину, на яку не можна дивитися без усмішки?")}
 </article></main>
 {more_links(B1)}"""
@@ -418,9 +573,26 @@ pages.append(page(BL, "Блог про подарунки й портрети з
             "blogPost": [{"@type": "BlogPosting", "headline": t, "url": SITE + u} for u, t, d in posts]},
            crumbs_ld([("Головна", "/"), ("Блог", BL)])]))
 
-# ---------- sitemap ----------
-urls = ["/"] + pages
-sm = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "".join(
-    f"  <url><loc>{SITE}{u}</loc><lastmod>{TODAY}</lastmod></url>\n" for u in urls) + "</urlset>\n"
+# ---------- англійська і французька ----------
+import pages_i18n
+for _l in ("en", "fr"):
+    pages += pages_i18n.build(_l, sys.modules[__name__])
+LANG = "uk"
+
+# ---------- sitemap з hreflang ----------
+urls = []
+for key in ["/"] + [REV.get(p, p) for p in pages]:
+    if key not in [k for k, _ in urls]:
+        urls.append((key, ALT.get(key, {"uk": key})))
+items = []
+for key, alts in urls:
+    links = "".join(f'<xhtml:link rel="alternate" hreflang="{l}" href="{SITE}{alts[l]}"/>' for l in ("uk", "en", "fr") if l in alts)
+    if "en" in alts:
+        links += f'<xhtml:link rel="alternate" hreflang="x-default" href="{SITE}{alts["en"]}"/>'
+    for l in ("uk", "en", "fr"):
+        if l in alts:
+            items.append(f"  <url><loc>{SITE}{alts[l]}</loc><lastmod>{TODAY}</lastmod>{links}</url>\n")
+sm = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
+      + "".join(items) + "</urlset>\n")
 open(os.path.join(REPO, "sitemap.xml"), "w").write(sm)
-print("\n".join(urls))
+print("\n".join(pages))
